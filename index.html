@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>電器採購成本統計表</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#ffffff; --bg2:#f5f5f3; --bg3:#eeecea;
+    --text:#1a1a18; --text2:#6b6b67; --text3:#9b9b96;
+    --border:rgba(0,0,0,0.1); --border2:rgba(0,0,0,0.18);
+    --teal:#1D9E75; --teal-light:#E1F5EE; --teal-dark:#0F6E56;
+    --amber:#BA7517; --red:#A32D2D;
+    --radius:8px; --radius-lg:12px;
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --bg:#1e1e1c; --bg2:#2a2a28; --bg3:#343430;
+    --text:#f0ede8; --text2:#a0a09a; --text3:#6a6a65;
+    --border:rgba(255,255,255,0.1); --border2:rgba(255,255,255,0.18);
+    --teal-light:#083d2c;
+  }}
+  body { font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif; background:var(--bg2); color:var(--text); min-height:100vh; padding:1.5rem 1rem; }
+  .wrap { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+  .card { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); }
+
+  .btn { display:inline-flex; align-items:center; gap:5px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text2); font-size:12px; font-family:inherit; padding:6px 12px; cursor:pointer; transition:background .15s,color .15s; white-space:nowrap; }
+  .btn:hover { background:var(--bg2); color:var(--text); }
+  .btn.primary { background:var(--teal); border-color:var(--teal); color:#fff; font-weight:500; }
+  .btn.primary:hover { background:var(--teal-dark); border-color:var(--teal-dark); }
+  .btn.danger:hover { color:var(--red); border-color:var(--red); }
+  .btn svg { width:14px; height:14px; flex-shrink:0; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; pointer-events:none; }
+
+  /* header */
+  .page-header { padding:1.25rem 1.5rem; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  .page-header h1 { font-size:17px; font-weight:500; display:flex; align-items:center; gap:8px; }
+  .page-header h1 svg { color:var(--teal); flex-shrink:0; }
+  .page-header p { font-size:12px; color:var(--text2); margin-top:3px; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* sync */
+  .sync-panel { padding:1rem 1.5rem; }
+  .sync-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .sync-title { font-size:13px; font-weight:500; display:flex; align-items:center; gap:6px; }
+  .sync-title svg { color:var(--teal); }
+  .sync-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .sync-status { font-size:11px; padding:2px 10px; border-radius:999px; }
+  .sync-status.idle    { color:var(--text3); background:var(--bg3); }
+  .sync-status.loading { color:var(--amber); background:#faeeda; }
+  .sync-status.ok      { color:var(--teal-dark); background:var(--teal-light); }
+  .sync-status.err     { color:var(--red); background:#fcebeb; }
+  .sync-body { display:grid; grid-template-columns:1fr 0.5px 1fr; gap:0; margin-top:14px; }
+  .sync-half { display:flex; flex-direction:column; gap:8px; padding:0 4px; }
+  .sync-divider { background:var(--border); margin:0 12px; }
+  .sync-sub { font-size:12px; font-weight:500; color:var(--text2); }
+  #syncCodeOut, #syncCodeIn { flex:1; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); font-size:11px; font-family:'Courier New',monospace; padding:8px 10px; resize:none; height:80px; outline:none; }
+  #syncCodeIn:focus { border-color:var(--teal); }
+  @media(max-width:500px){
+    .sync-body { grid-template-columns:1fr; }
+    .sync-divider { height:0.5px; margin:12px 0; }
+  }
+  .sync-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .sync-label { font-size:12px; color:var(--text2); white-space:nowrap; width:72px; }
+  .sync-input { flex:1; min-width:160px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); font-size:13px; font-family:inherit; padding:6px 10px; }
+  .sync-input:focus { outline:none; border-color:var(--teal); }
+  .sync-hint { font-size:11px; color:var(--text2); line-height:1.65; background:var(--bg2); border-radius:var(--radius); padding:10px 12px; }
+  .sync-hint a { color:var(--teal); }
+  .sync-hint strong { color:var(--text); }
+  .step { display:flex; gap:8px; align-items:flex-start; margin-bottom:4px; }
+  .step:last-child { margin-bottom:0; }
+  .step-num { font-size:11px; font-weight:700; color:#fff; background:var(--teal); border-radius:999px; width:18px; height:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+
+  /* budget */
+  .budget-row { padding:1rem 1.5rem; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .budget-row label { font-size:13px; color:var(--text2); white-space:nowrap; display:flex; align-items:center; gap:6px; }
+  .budget-row label svg { color:var(--teal); }
+  .budget-input { border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); font-size:15px; font-family:inherit; font-weight:500; padding:6px 10px; width:180px; }
+  .budget-input:focus { outline:none; border-color:var(--teal); }
+  .save-hint { font-size:11px; color:var(--teal-dark); background:var(--teal-light); padding:2px 10px; border-radius:999px; opacity:0; transition:opacity .3s; margin-left:auto; }
+  .save-hint.show { opacity:1; }
+
+  /* metrics */
+  .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .metric-card { padding:1rem 1.25rem; }
+  .metric-label { font-size:11px; color:var(--text2); margin-bottom:6px; }
+  .metric-val { font-size:22px; font-weight:500; line-height:1; }
+  .metric-val.safe { color:var(--teal); }
+  .metric-val.warn { color:var(--amber); }
+  .metric-val.over { color:var(--red); }
+
+  /* progress */
+  .progress-card { padding:1rem 1.5rem; }
+  .progress-track { height:8px; background:var(--bg3); border-radius:999px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:999px; background:var(--teal); transition:width .4s ease; }
+  .progress-fill.warn { background:var(--amber); }
+  .progress-fill.over { background:var(--red); }
+  .progress-labels { display:flex; justify-content:space-between; font-size:12px; color:var(--text2); margin-top:6px; }
+
+  /* table */
+  .table-card { overflow:hidden; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; min-width:620px; }
+  thead { background:var(--bg2); }
+  th { padding:10px 12px; font-size:11px; font-weight:500; color:var(--text2); text-align:left; white-space:nowrap; border-bottom:0.5px solid var(--border); }
+  td { padding:0; border-bottom:0.5px solid var(--border); vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover td { background:rgba(0,0,0,.02); }
+  .td-num { font-size:11px; color:var(--text3); text-align:center; padding:8px 6px; }
+  .td-input { width:100%; border:none; background:transparent; font-size:14px; color:var(--text); padding:9px 12px; outline:none; font-family:inherit; }
+  .td-input:focus { background:var(--bg2); }
+  .td-input::placeholder { color:var(--text3); }
+  .td-input[type="number"] { text-align:right; }
+  .td-input[type="number"]::-webkit-inner-spin-button,
+  .td-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; }
+  .subtotal-cell { padding:9px 12px; font-size:14px; font-weight:500; color:var(--text); text-align:right; white-space:nowrap; }
+  .src-wrap { display:flex; flex-direction:column; }
+  .src-link { display:inline-flex; align-items:center; gap:4px; padding:2px 12px 7px; font-size:12px; color:var(--teal); text-decoration:none; }
+  .src-link:hover { text-decoration:underline; }
+  .del-btn { background:none; border:none; cursor:pointer; color:var(--text3); padding:9px 10px; line-height:1; display:block; width:100%; transition:color .15s; }
+  .del-btn:hover { color:var(--red); }
+  tfoot td { background:var(--bg2); border-top:0.5px solid var(--border); }
+  .tf-label { padding:10px 12px; font-size:12px; font-weight:500; color:var(--text2); }
+  .tf-total { padding:10px 12px; font-size:16px; font-weight:500; color:var(--text); text-align:right; white-space:nowrap; }
+
+  .bottom-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  /* modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:1rem; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:1.5rem; max-width:480px; width:100%; }
+  .modal h3 { font-size:15px; font-weight:500; margin-bottom:8px; }
+  .modal p { font-size:13px; color:var(--text2); margin-bottom:1rem; line-height:1.6; }
+  .modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+  .file-drop { border:1.5px dashed var(--border2); border-radius:var(--radius); background:var(--bg2); padding:2rem 1rem; text-align:center; cursor:pointer; margin-bottom:1rem; transition:border-color .15s,background .15s; position:relative; }
+  .file-drop:hover,.file-drop.dragover { border-color:var(--teal); background:var(--teal-light); }
+  .file-drop input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .file-drop-icon { font-size:32px; margin-bottom:8px; }
+  .file-drop-text { font-size:14px; font-weight:500; color:var(--text); margin-bottom:4px; }
+  .file-drop-sub { font-size:12px; color:var(--text2); }
+  .file-selected { font-size:13px; color:var(--teal); margin-top:8px; font-weight:500; }
+
+  @media(max-width:600px){
+    .metrics { grid-template-columns:1fr 1fr; }
+    .metrics .metric-card:last-child { grid-column:span 2; }
+    body { padding:1rem .75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="card page-header">
+    <div>
+      <h1>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        電器採購成本統計表
+      </h1>
+      <p>資料存於本機。可透過下方「雲端同步」讓兩人共用同一份資料。</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="importBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        匯入檔案
+      </button>
+      <button class="btn" id="exportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        匯出檔案
+      </button>
+    </div>
+  </div>
+
+  <!-- Sync Panel -->
+  <div class="card sync-panel">
+    <div class="sync-header">
+      <div class="sync-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"/></svg>
+        共用同步
+      </div>
+      <span class="sync-status idle" id="syncStatus">—</span>
+    </div>
+
+    <div class="sync-body">
+      <div class="sync-half">
+        <div class="sync-sub">📤 傳送方</div>
+        <button class="btn primary" id="genCodeBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+          產生同步碼
+        </button>
+        <textarea id="syncCodeOut" readonly placeholder="同步碼會出現在這裡"></textarea>
+        <button class="btn" id="copySyncCodeBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          複製 / 分享
+        </button>
+      </div>
+
+      <div class="sync-divider"></div>
+
+      <div class="sync-half">
+        <div class="sync-sub">📥 接收方</div>
+        <textarea id="syncCodeIn" placeholder="貼上收到的同步碼…"></textarea>
+        <button class="btn primary" id="applyCodeBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="9"/><path d="M21 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4"/></svg>
+          套用同步碼
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget -->
+  <div class="card budget-row">
+    <label for="budgetInput">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      預算上限
+    </label>
+    <input type="number" id="budgetInput" class="budget-input" value="500000" />
+    <span style="font-size:13px;color:var(--text2);">元</span>
+    <span class="save-hint" id="saveHint">已儲存 ✓</span>
+  </div>
+
+  <!-- Metrics 採購 -->
+  <div class="metrics">
+    <div class="card metric-card"><div class="metric-label">採購預算</div><div class="metric-val" id="mBudget">NT$500,000</div></div>
+    <div class="card metric-card"><div class="metric-label">採購已用</div><div class="metric-val" id="mSpent">NT$0</div></div>
+    <div class="card metric-card"><div class="metric-label">採購剩餘</div><div class="metric-val safe" id="mRemain">NT$500,000</div></div>
+  </div>
+
+  <!-- Metrics 年費 -->
+  <div class="metrics">
+    <div class="card metric-card" style="border-left:3px solid #BA7517;">
+      <div class="metric-label">每年花費合計</div>
+      <div class="metric-val warn" id="mAnnual">NT$0</div>
+    </div>
+    <div class="card metric-card" style="border-left:3px solid #BA7517;">
+      <div class="metric-label">每月平均花費</div>
+      <div class="metric-val" id="mMonthly" style="color:var(--amber);">NT$0</div>
+    </div>
+    <div class="card metric-card" style="border-left:3px solid #BA7517;">
+      <div class="metric-label">10年總花費（採購＋年費）</div>
+      <div class="metric-val" id="mTen" style="color:var(--text2);font-size:17px;">NT$0</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card progress-card">
+    <div class="progress-track"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-labels"><span id="pctLeft">使用 0%</span><span id="pctRight">剩餘 100%</span></div>
+  </div>
+
+  <!-- Table -->
+  <div class="card table-card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px;">#</th>
+          <th style="min-width:140px;">電器種類</th>
+          <th style="width:60px;text-align:right;">數量</th>
+          <th style="width:110px;text-align:right;">單價（元）</th>
+          <th style="width:110px;text-align:right;">採購小計</th>
+          <th style="width:120px;text-align:right;">每年花費（元）</th>
+          <th style="min-width:160px;">來源 / 網址</th>
+          <th style="width:40px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4"><div class="tf-label">採購合計</div></td>
+          <td><div class="tf-total" id="totalCell">NT$0</div></td>
+          <td colspan="3"></td>
+        </tr>
+        <tr>
+          <td colspan="4"><div class="tf-label" style="color:var(--amber);">每年花費合計</div></td>
+          <td></td>
+          <td><div class="tf-total" id="annualTotalCell" style="color:var(--amber);">NT$0</div></td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Bottom -->
+  <div class="bottom-bar">
+    <button class="btn primary" id="addBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      新增電器
+    </button>
+    <button class="btn danger" id="clearBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      清空所有資料
+    </button>
+  </div>
+
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3>匯入資料檔案</h3>
+    <p>選取 <strong>.json</strong> 檔案，匯入後目前資料將被覆蓋。</p>
+    <div class="file-drop" id="fileDrop">
+      <input type="file" id="fileInput" accept=".json,application/json" />
+      <div class="file-drop-icon">📂</div>
+      <div class="file-drop-text">點此選取 JSON 檔案</div>
+      <div class="file-drop-sub">或將檔案拖曳至此</div>
+      <div class="file-selected" id="fileSelected"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" id="importCancelBtn">取消</button>
+      <button class="btn primary" id="importConfirmBtn" disabled style="opacity:.5;cursor:not-allowed;">確認匯入</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
+const BASE = 'https://jsonblob.com/api/jsonBlob';
+let rows = [], budget = 500000, saveTimer = null;
+
+const fmt    = n => 'NT$' + Math.round(n).toLocaleString('zh-TW');
+const uid    = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const newRow = () => ({ id:uid(), name:'', qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'' });
+
+function persist() {
+  try { localStorage.setItem(LS.ROWS,JSON.stringify(rows)); localStorage.setItem(LS.BUDGET,String(budget)); } catch(e){}
+  clearTimeout(saveTimer);
+  const h = document.getElementById('saveHint');
+  h.classList.add('show');
+  saveTimer = setTimeout(()=>h.classList.remove('show'),2000);
+}
+
+function load() {
+  try {
+    const r=localStorage.getItem(LS.ROWS), b=localStorage.getItem(LS.BUDGET);
+    if(r) rows=JSON.parse(r);
+    if(b) budget=parseFloat(b)||500000;
+  } catch(e){}
+  if(!rows.length) rows=[newRow(),newRow(),newRow()];
+  document.getElementById('budgetInput').value = budget;
+  buildTable(); updateTotals();
+}
+
+const getTotal       = () => rows.reduce((s,r)=>s+(parseFloat(r.qty)||0)*(parseFloat(r.price)||0),0);
+const getAnnualTotal = () => rows.reduce((s,r)=>s+(parseFloat(r.annualCost)||0),0);
+
+function updateTotals() {
+  const total=getTotal(), remain=budget-total;
+  const annual=getAnnualTotal();
+  const pct = budget>0 ? Math.min(100,(total/budget)*100) : 0;
+
+  document.getElementById('mBudget').textContent = fmt(budget);
+  document.getElementById('mSpent').textContent  = fmt(total);
+  const re=document.getElementById('mRemain');
+  if(remain<0)    { re.className='metric-val over'; re.textContent='超出 '+fmt(Math.abs(remain)); }
+  else if(pct>=80){ re.className='metric-val warn'; re.textContent=fmt(remain); }
+  else            { re.className='metric-val safe'; re.textContent=fmt(remain); }
+
+  const bar=document.getElementById('progressBar');
+  bar.style.width=pct.toFixed(1)+'%';
+  bar.className='progress-fill'+(pct>=100?' over':pct>=80?' warn':'');
+  document.getElementById('pctLeft').textContent  = '使用 '+Math.round(pct)+'%';
+  document.getElementById('pctRight').textContent = remain>=0?'剩餘 '+Math.round(100-pct)+'%':'超出預算';
+
+  document.getElementById('totalCell').textContent       = fmt(total);
+  document.getElementById('annualTotalCell').textContent = fmt(annual);
+
+  /* 年費卡片 */
+  document.getElementById('mAnnual').textContent  = fmt(annual);
+  document.getElementById('mMonthly').textContent = fmt(annual/12);
+  document.getElementById('mTen').textContent     = fmt(total + annual*10);
+
+  /* 逐列更新小計（不重建 DOM） */
+  rows.forEach(r=>{
+    const sub=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0);
+    const s=document.querySelector('.subtotal-cell[data-id="'+r.id+'"]');
+    if(s) s.textContent=sub>0?fmt(sub):'—';
+    const a=document.querySelector('.annual-cell[data-id="'+r.id+'"]');
+    if(a) a.textContent=(parseFloat(r.annualCost)||0)>0?fmt(parseFloat(r.annualCost)):'—';
+  });
+}
+
+const LSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+const DSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+
+function buildTable() {
+  const tbody=document.getElementById('tableBody');
+  tbody.innerHTML='';
+  rows.forEach((row,i)=>{
+    const sub=(parseFloat(row.qty)||0)*(parseFloat(row.price)||0);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="td-num">${i+1}</div></td>
+      <td><input class="td-input" placeholder="例：冰箱、冷氣" data-id="${row.id}" data-field="name" value="${esc(row.name)}" /></td>
+      <td><input class="td-input" type="number" min="1" step="1" placeholder="1" data-id="${row.id}" data-field="qty" value="${esc(row.qty)}" /></td>
+      <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="price" value="${esc(row.price)}" /></td>
+      <td><div class="subtotal-cell" data-id="${row.id}">${sub>0?fmt(sub):'—'}</div></td>
+      <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="annualCost" value="${esc(row.annualCost)}" style="color:var(--amber);" /></td>
+      <td><div class="src-wrap">
+        <input class="td-input" placeholder="來源名稱（momo、PChome、團購…）" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
+        <input class="td-input" placeholder="https://…（選填）" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
+        ${row.srcUrl?`<a class="src-link" href="${esc(row.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(row.srcLabel||row.srcUrl)}</a>`:''}
+      </div></td>
+      <td><button class="del-btn" data-id="${row.id}" title="刪除">${DSVG}</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+const tbody=document.getElementById('tableBody');
+tbody.addEventListener('compositionend',e=>{
+  const el=e.target; if(!el.dataset.id)return;
+  const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
+  r[el.dataset.field]=el.value; updateTotals(); persist();
+});
+tbody.addEventListener('input',e=>{
+  const el=e.target; if(!el.dataset.id||e.isComposing)return;
+  const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
+  r[el.dataset.field]=el.value; updateTotals(); persist();
+});
+tbody.addEventListener('change',e=>{
+  const el=e.target; if(!el.dataset.id)return;
+  const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
+  r[el.dataset.field]=el.value;
+  if(el.dataset.field==='srcUrl'||el.dataset.field==='srcLabel'){
+    const wrap=el.closest('.src-wrap'); if(!wrap)return;
+    const old=wrap.querySelector('.src-link'); if(old)old.remove();
+    if(r.srcUrl){ const a=document.createElement('a'); a.className='src-link'; a.href=r.srcUrl; a.target='_blank'; a.rel='noopener'; a.innerHTML=`${LSVG} ${esc(r.srcLabel||r.srcUrl)}`; wrap.appendChild(a); }
+  }
+  persist();
+});
+tbody.addEventListener('click',e=>{
+  const btn=e.target.closest('.del-btn'); if(!btn)return;
+  if(!confirm('確定要刪除這筆資料嗎？'))return;
+  rows=rows.filter(r=>r.id!==btn.dataset.id);
+  buildTable(); updateTotals(); persist();
+});
+
+document.getElementById('addBtn').addEventListener('click',()=>{
+  rows.push(newRow()); buildTable(); updateTotals(); persist();
+  const all=document.querySelectorAll('#tableBody .td-input[data-field="name"]');
+  if(all.length) all[all.length-1].focus();
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(!confirm('確定要清空所有資料嗎？\n此動作無法復原。'))return;
+  rows=[newRow(),newRow(),newRow()]; buildTable(); updateTotals(); persist();
+});
+document.getElementById('budgetInput').addEventListener('input',e=>{
+  budget=parseFloat(e.target.value)||0; updateTotals(); persist();
+});
+
+/* ══ 同步碼 ══ */
+function setSyncStatus(type,msg){
+  const el=document.getElementById('syncStatus');
+  el.className='sync-status '+type; el.textContent=msg;
+}
+
+document.getElementById('genCodeBtn').addEventListener('click', async ()=>{
+  try {
+    const code = btoa(encodeURIComponent(JSON.stringify({budget,rows})));
+    document.getElementById('syncCodeOut').value = code;
+    setSyncStatus('ok','同步碼已產生（'+code.length+' 字元）');
+    if(navigator.share){
+      try { await navigator.share({title:'電器採購同步碼', text:code}); return; }
+      catch(e){ if(e.name==='AbortError') return; }
+    }
+    const out=document.getElementById('syncCodeOut');
+    out.focus(); out.setSelectionRange(0,out.value.length);
+  } catch(e){ alert('產生失敗：'+e.message); }
+});
+
+document.getElementById('copySyncCodeBtn').addEventListener('click', async ()=>{
+  const v=document.getElementById('syncCodeOut').value; if(!v) return;
+  if(navigator.share){
+    try { await navigator.share({title:'電器採購同步碼', text:v}); return; }
+    catch(e){ if(e.name==='AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(v);
+    setSyncStatus('ok','已複製！傳給對方貼入後按「套用」');
+  } catch(e){
+    const out=document.getElementById('syncCodeOut');
+    out.focus(); out.setSelectionRange(0,out.value.length);
+    alert('請手動長按 → 全選 → 複製上方同步碼，再傳給對方。');
+  }
+});
+
+document.getElementById('applyCodeBtn').addEventListener('click',()=>{
+  const raw=document.getElementById('syncCodeIn').value;
+  if(!raw.trim()){ alert('請先貼入同步碼'); return; }
+  const code=raw.replace(/\s/g,'');
+  try {
+    const parsed=JSON.parse(decodeURIComponent(atob(code)));
+    if(!Array.isArray(parsed.rows)) throw new Error('找不到資料列');
+    if(!confirm(`套用後將覆蓋目前資料（${parsed.rows.length} 筆）。確定繼續？`)) return;
+    rows=parsed.rows; budget=parseFloat(parsed.budget)||500000;
+    document.getElementById('budgetInput').value=budget;
+    buildTable(); updateTotals(); persist();
+    document.getElementById('syncCodeIn').value='';
+    setSyncStatus('ok','套用成功 '+new Date().toLocaleTimeString('zh-TW'));
+  } catch(e){ alert('同步碼無效，請確認完整複製。\n錯誤：'+e.message); }
+});
+
+
+/* ══ Export ══ */
+document.getElementById('exportBtn').addEventListener('click', async ()=>{
+  const data=JSON.stringify({budget,rows},null,2);
+  const fname='電器採購資料_'+new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')+'.json';
+  const blob=new Blob([data],{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[new File([blob],fname,{type:'application/json'})]})){
+    try{ await navigator.share({files:[new File([blob],fname,{type:'application/json'})],title:fname}); return; }
+    catch(e){ if(e.name==='AbortError')return; }
+  }
+  try{
+    const url=URL.createObjectURL(blob);
+    const a=Object.assign(document.createElement('a'),{href:url,download:fname});
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000); return;
+  } catch(e){}
+  const w=window.open('','_blank');
+  if(w){ w.document.write('<pre style="font-size:13px;white-space:pre-wrap;">'+data.replace(/</g,'&lt;')+'</pre>'); w.document.title=fname; }
+  else alert('請允許彈出視窗或改用電腦匯出。');
+});
+
+/* ══ Import ══ */
+let pendingImport=null;
+function resetImportModal(){
+  pendingImport=null;
+  document.getElementById('fileInput').value='';
+  document.getElementById('fileSelected').textContent='';
+  const b=document.getElementById('importConfirmBtn');
+  b.disabled=true; b.style.opacity='.5'; b.style.cursor='not-allowed';
+}
+function readJsonFile(file){
+  if(!file)return;
+  if(!file.name.endsWith('.json')&&file.type!=='application/json'){ alert('請選取 .json 格式的檔案。'); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const p=JSON.parse(e.target.result);
+      if(p.rows&&Array.isArray(p.rows)){
+        pendingImport=p;
+        document.getElementById('fileSelected').textContent='✓ '+file.name+'（'+p.rows.length+' 筆資料）';
+        const b=document.getElementById('importConfirmBtn'); b.disabled=false; b.style.opacity='1'; b.style.cursor='pointer';
+      } else alert('格式不正確，請確認是從本表匯出的 JSON 檔。');
+    } catch(err){ alert('讀取失敗：'+err.message); }
+  };
+  reader.readAsText(file,'UTF-8');
+}
+document.getElementById('importBtn').addEventListener('click',()=>{ resetImportModal(); document.getElementById('importModal').classList.add('open'); });
+document.getElementById('importCancelBtn').addEventListener('click',()=>document.getElementById('importModal').classList.remove('open'));
+document.getElementById('importConfirmBtn').addEventListener('click',()=>{
+  if(!pendingImport)return;
+  rows=pendingImport.rows; budget=parseFloat(pendingImport.budget)||500000;
+  document.getElementById('budgetInput').value=budget;
+  buildTable(); updateTotals(); persist();
+  document.getElementById('importModal').classList.remove('open');
+  alert('匯入成功！共 '+rows.length+' 筆資料。');
+});
+document.getElementById('fileInput').addEventListener('change',e=>readJsonFile(e.target.files[0]));
+const fd=document.getElementById('fileDrop');
+fd.addEventListener('dragover',e=>{ e.preventDefault(); fd.classList.add('dragover'); });
+fd.addEventListener('dragleave',()=>fd.classList.remove('dragover'));
+fd.addEventListener('drop',e=>{ e.preventDefault(); fd.classList.remove('dragover'); readJsonFile(e.dataTransfer.files[0]); });
+document.getElementById('importModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
+
+load();
+</script>
+</body>
+</html>
