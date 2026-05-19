@@ -519,32 +519,19 @@ tbody.addEventListener('click',e=>{
   if(qBtn&&qBtn.dataset.id){
     const r=rows.find(r=>r.id===qBtn.dataset.id); if(!r)return;
     const cur=parseInt(r.qty)||1;
-    r.qty = qBtn.dataset.action==='plus' ? cur+1 : Math.max(1,cur-1);
+    r.qty=qBtn.dataset.action==='plus'?cur+1:Math.max(1,cur-1);
     const inp=qBtn.parentElement.querySelector('input');
     if(inp) inp.value=r.qty;
     updateTotals(); persist(); return;
   }
-tbody.addEventListener('change',e=>{
-  const el=e.target; if(!el.dataset.id)return;
-  const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
-  r[el.dataset.field]=el.value;
-  if(el.dataset.field==='srcUrl'||el.dataset.field==='srcLabel'){
-    const wrap=el.closest('.src-wrap'); if(!wrap)return;
-    const old=wrap.querySelector('.src-link'); if(old)old.remove();
-    if(r.srcUrl){ const a=document.createElement('a'); a.className='src-link'; a.href=r.srcUrl; a.target='_blank'; a.rel='noopener'; a.innerHTML=`${LSVG} ${esc(r.srcLabel||r.srcUrl)}`; wrap.appendChild(a); }
-  }
-  persist();
-});
-tbody.addEventListener('click',e=>{
   /* 移至許願表 */
   const moveBtn=e.target.closest('.move-wish-btn');
   if(moveBtn){
     const row=rows.find(r=>r.id===moveBtn.dataset.id); if(!row)return;
-    wishes.push({ id:uid(), name:row.name, category:'家電', qty:row.qty||1, price:row.price, annualCost:row.annualCost, srcLabel:row.srcLabel, srcUrl:row.srcUrl, priority:'★★★', note:'' });
+    wishes.push({id:uid(),name:row.name,category:'家電',qty:row.qty||1,price:row.price,annualCost:row.annualCost,srcLabel:row.srcLabel,srcUrl:row.srcUrl,priority:'★★★',note:''});
     rows=rows.filter(r=>r.id!==moveBtn.dataset.id);
     buildTable(); updateTotals(); persist();
-    buildWishTable(); persistWishes();
-    return;
+    buildWishTable(); persistWishes(); return;
   }
   /* 刪除 */
   const btn=e.target.closest('.del-btn'); if(!btn||!btn.dataset.id)return;
@@ -552,10 +539,21 @@ tbody.addEventListener('click',e=>{
   rows=rows.filter(r=>r.id!==btn.dataset.id);
   buildTable(); updateTotals(); persist();
 });
+tbody.addEventListener('change',e=>{
+  const el=e.target; if(!el.dataset.id)return;
+  const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
+  r[el.dataset.field]=el.value;
+  if(el.dataset.field==='srcUrl'||el.dataset.field==='srcLabel'){
+    const wrap=el.closest('.src-wrap'); if(!wrap)return;
+    const old=wrap.querySelector('.src-link'); if(old)old.remove();
+    if(r.srcUrl){const a=document.createElement('a');a.className='src-link';a.href=r.srcUrl;a.target='_blank';a.rel='noopener';a.innerHTML=`${LSVG} ${esc(r.srcLabel||r.srcUrl)}`;wrap.appendChild(a);}
+  }
+  persist();
+});
 
 document.getElementById('addBtn').addEventListener('click',()=>{
   rows.push(newRow()); buildTable(); updateTotals(); persist();
-  const all=document.querySelectorAll('#tableBody .td-input[data-field="name"]');
+  const all=document.querySelectorAll('#tableBody .name-ta');
   if(all.length) all[all.length-1].focus();
 });
 document.getElementById('clearBtn').addEventListener('click',()=>{
