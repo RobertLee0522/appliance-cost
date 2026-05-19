@@ -250,7 +250,7 @@
       <thead>
         <tr>
           <th style="width:36px;">#</th>
-          <th style="min-width:140px;">電器種類</th>
+          <th style="min-width:140px;">家電總類</th>
           <th style="width:60px;text-align:right;">數量</th>
           <th style="width:110px;text-align:right;">單價（元）</th>
           <th style="width:110px;text-align:right;">採購小計</th>
@@ -272,6 +272,11 @@
           <td><div class="tf-total" id="annualTotalCell" style="color:var(--amber);">NT$0</div></td>
           <td colspan="2"></td>
         </tr>
+        <tr style="background:var(--teal-light);">
+          <td colspan="4"><div class="tf-label" style="color:var(--teal-dark);">採購剩餘預算</div></td>
+          <td><div class="tf-total" id="remainCell" style="color:var(--teal-dark);">NT$0</div></td>
+          <td colspan="3"></td>
+        </tr>
       </tfoot>
     </table>
   </div>
@@ -280,12 +285,56 @@
   <div class="bottom-bar">
     <button class="btn primary" id="addBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      新增電器
+      新增項目
     </button>
     <button class="btn danger" id="clearBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
       清空所有資料
     </button>
+  </div>
+
+  <!-- 許願表 -->
+  <div class="card" style="padding:1.25rem 1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:15px;font-weight:500;display:flex;align-items:center;gap:7px;">
+          <span style="font-size:18px;">🛒</span> 許願表
+          <span style="font-size:11px;color:var(--text2);font-weight:400;background:var(--bg2);padding:2px 8px;border-radius:999px;">家具尚缺清單</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px;">記錄想買還沒買的項目，預估金額僅供參考</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:12px;color:var(--text2);">預估總額</span>
+        <span id="wishTotal" style="font-size:15px;font-weight:500;color:var(--teal);">NT$0</span>
+        <button class="btn primary" id="addWishBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增
+        </button>
+      </div>
+    </div>
+    <div class="table-card" style="border-radius:var(--radius);border:0.5px solid var(--border);overflow:hidden;">
+      <table style="min-width:500px;">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th style="min-width:140px;">項目名稱</th>
+            <th style="width:100px;">類別</th>
+            <th style="width:120px;text-align:right;">預估金額（元）</th>
+            <th style="width:60px;text-align:center;">優先度</th>
+            <th style="min-width:120px;">備註</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="wishBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><div class="tf-label">預估合計</div></td>
+            <td><div class="tf-total" id="wishTotalCell" style="text-align:right;">NT$0</div></td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
 
 </div>
@@ -329,13 +378,16 @@ function persist() {
 
 function load() {
   try {
-    const r=localStorage.getItem(LS.ROWS), b=localStorage.getItem(LS.BUDGET);
+    const r=localStorage.getItem(LS.ROWS), b=localStorage.getItem(LS.BUDGET), w=localStorage.getItem('ar-wishes');
     if(r) rows=JSON.parse(r);
     if(b) budget=parseFloat(b)||500000;
+    if(w) wishes=JSON.parse(w);
   } catch(e){}
-  if(!rows.length) rows=[newRow(),newRow(),newRow()];
+  if(!rows.length)   rows=[newRow(),newRow(),newRow()];
+  if(!wishes.length) wishes=[newWish()];
   document.getElementById('budgetInput').value = budget;
   buildTable(); updateTotals();
+  buildWishTable();
 }
 
 const getTotal       = () => rows.reduce((s,r)=>s+(parseFloat(r.qty)||0)*(parseFloat(r.price)||0),0);
@@ -361,6 +413,11 @@ function updateTotals() {
 
   document.getElementById('totalCell').textContent       = fmt(total);
   document.getElementById('annualTotalCell').textContent = fmt(annual);
+
+  /* 採購剩餘 */
+  const remCell = document.getElementById('remainCell');
+  remCell.textContent = remain>=0 ? fmt(remain) : '超出 '+fmt(Math.abs(remain));
+  remCell.style.color = remain<0 ? 'var(--red)' : 'var(--teal-dark)';
 
   /* 年費卡片 */
   document.getElementById('mAnnual').textContent  = fmt(annual);
@@ -474,7 +531,7 @@ document.getElementById('copyBinBtn').addEventListener('click',()=>{
 document.getElementById('uploadBtn').addEventListener('click', async ()=>{
   const key=getKey(); if(!key) return;
   setSyncStatus('loading','上傳中…');
-  const payload={budget,rows};
+  const payload={budget,rows,wishes};
   try {
     let res;
     if(!getBin()){
@@ -507,8 +564,10 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
     if(!rec||!Array.isArray(rec.rows)) throw new Error('資料格式不正確');
     if(!confirm(`下載後將覆蓋目前資料（${rec.rows.length} 筆）。確定繼續？`)){ setSyncStatus('idle','已取消'); return; }
     rows=rec.rows; budget=parseFloat(rec.budget)||500000;
+    if(Array.isArray(rec.wishes)) wishes=rec.wishes;
     document.getElementById('budgetInput').value=budget;
     buildTable(); updateTotals(); persist();
+    buildWishTable(); persistWishes();
     setSyncStatus('ok','下載成功 '+new Date().toLocaleTimeString('zh-TW'));
   } catch(e){ setSyncStatus('err','下載失敗：'+e.message); alert('下載失敗：\n'+e.message); }
 });
@@ -582,7 +641,70 @@ fd.addEventListener('dragleave',()=>fd.classList.remove('dragover'));
 fd.addEventListener('drop',e=>{ e.preventDefault(); fd.classList.remove('dragover'); readJsonFile(e.dataTransfer.files[0]); });
 document.getElementById('importModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
-load();
+/* ══ 許願表 ══ */
+let wishes = [];
+const newWish = () => ({ id:uid(), name:'', category:'家具', price:'', priority:'★★★', note:'' });
+const CATS = ['家具','軟裝','家電','廚衛','其他'];
+const PRIS = ['★★★','★★☆','★☆☆'];
+
+function getWishTotal(){ return wishes.reduce((s,w)=>s+(parseFloat(w.price)||0),0); }
+
+function updateWishTotal(){
+  const t=getWishTotal();
+  document.getElementById('wishTotal').textContent     = fmt(t);
+  document.getElementById('wishTotalCell').textContent = fmt(t);
+}
+
+function buildWishTable(){
+  const tbody=document.getElementById('wishBody');
+  tbody.innerHTML='';
+  wishes.forEach((w,i)=>{
+    const tr=document.createElement('tr');
+    const catOpts=CATS.map(c=>`<option${c===w.category?' selected':''}>${c}</option>`).join('');
+    const priOpts=PRIS.map(p=>`<option${p===w.priority?' selected':''}>${p}</option>`).join('');
+    tr.innerHTML=`
+      <td><div class="td-num">${i+1}</div></td>
+      <td><input class="td-input" placeholder="例：餐桌、窗簾、床架" data-wid="${w.id}" data-wf="name" value="${esc(w.name)}" /></td>
+      <td><select class="td-input" data-wid="${w.id}" data-wf="category" style="cursor:pointer;">${catOpts}</select></td>
+      <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="price" value="${esc(w.price)}" /></td>
+      <td><select class="td-input" data-wid="${w.id}" data-wf="priority" style="cursor:pointer;text-align:center;">${priOpts}</select></td>
+      <td><input class="td-input" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
+      <td><button class="del-btn" data-wid="${w.id}">${DSVG}</button></td>`;
+    tbody.appendChild(tr);
+  });
+  updateWishTotal();
+}
+
+function persistWishes(){ try{ localStorage.setItem('ar-wishes',JSON.stringify(wishes)); }catch(e){} }
+
+const wishBody=document.getElementById('wishBody');
+wishBody.addEventListener('compositionend',e=>{
+  const el=e.target; if(!el.dataset.wid)return;
+  const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
+  w[el.dataset.wf]=el.value; updateWishTotal(); persistWishes();
+});
+wishBody.addEventListener('input',e=>{
+  const el=e.target; if(!el.dataset.wid||e.isComposing)return;
+  const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
+  w[el.dataset.wf]=el.value; updateWishTotal(); persistWishes();
+});
+wishBody.addEventListener('change',e=>{
+  const el=e.target; if(!el.dataset.wid)return;
+  const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
+  w[el.dataset.wf]=el.value; updateWishTotal(); persistWishes();
+});
+wishBody.addEventListener('click',e=>{
+  const btn=e.target.closest('.del-btn'); if(!btn||!btn.dataset.wid)return;
+  if(!confirm('確定刪除這筆許願？'))return;
+  wishes=wishes.filter(x=>x.id!==btn.dataset.wid);
+  buildWishTable(); persistWishes();
+});
+document.getElementById('addWishBtn').addEventListener('click',()=>{
+  wishes.push(newWish()); buildWishTable(); persistWishes();
+  const inputs=document.querySelectorAll('#wishBody .td-input[data-wf="name"]');
+  if(inputs.length) inputs[inputs.length-1].focus();
+});
+
 </script>
 </body>
 </html>
