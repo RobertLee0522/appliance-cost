@@ -136,6 +136,17 @@
     .metrics .metric-card:last-child { grid-column:span 2; }
     body { padding:1rem .75rem; }
   }
+  /* 數量 ± 控制 */
+  .qty-ctrl { display:flex; align-items:center; justify-content:flex-end; }
+  .qty-btn { background:var(--bg3); border:none; cursor:pointer; color:var(--text2); width:24px; height:28px; font-size:16px; line-height:1; flex-shrink:0; border-radius:4px; display:flex; align-items:center; justify-content:center; }
+  .qty-btn:hover { background:var(--border2); color:var(--text); }
+  .qty-btn:active { transform:scale(0.92); }
+  input.qty-num { text-align:center !important; width:36px !important; padding:0 2px !important; }
+  /* 名稱欄自動換行 */
+  input.name-inp { white-space:normal; word-break:break-all; }
+  textarea.name-ta { width:100%; border:none; background:transparent; font-size:14px; color:var(--text); padding:8px 12px; outline:none; font-family:inherit; resize:none; overflow:hidden; min-height:36px; line-height:1.4; display:block; }
+  textarea.name-ta:focus { background:var(--bg2); }
+  textarea.name-ta::placeholder { color:var(--text3); }
   select.pri-select {
     -webkit-appearance:none; -moz-appearance:none; appearance:none;
     background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -319,24 +330,28 @@
       </div>
     </div>
     <div class="table-card" style="border-radius:var(--radius);border:0.5px solid var(--border);overflow:hidden;">
-      <table style="min-width:500px;">
+      <table style="min-width:700px;">
         <thead>
           <tr>
             <th style="width:36px;">#</th>
-            <th style="min-width:140px;">項目名稱</th>
-            <th style="width:100px;">類別</th>
-            <th style="width:120px;text-align:right;">預估金額（元）</th>
-            <th style="width:60px;text-align:center;">優先度</th>
-            <th style="min-width:120px;">備註</th>
-            <th style="width:40px;"></th>
+            <th style="min-width:150px;">項目名稱</th>
+            <th style="width:80px;">類別</th>
+            <th style="width:90px;text-align:right;">數量</th>
+            <th style="width:110px;text-align:right;">單價（元）</th>
+            <th style="width:100px;text-align:right;">小計</th>
+            <th style="width:110px;text-align:right;">年費（元）</th>
+            <th style="width:80px;text-align:center;">優先度</th>
+            <th style="min-width:150px;">來源 / 網址</th>
+            <th style="min-width:100px;">備註</th>
+            <th style="width:60px;"></th>
           </tr>
         </thead>
         <tbody id="wishBody"></tbody>
         <tfoot>
           <tr>
-            <td colspan="3"><div class="tf-label">預估合計</div></td>
+            <td colspan="5"><div class="tf-label">預估合計</div></td>
             <td><div class="tf-total" id="wishTotalCell" style="text-align:right;">NT$0</div></td>
-            <td colspan="3"></td>
+            <td colspan="5"></td>
           </tr>
         </tfoot>
       </table>
@@ -454,21 +469,32 @@ function buildTable() {
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td><div class="td-num">${i+1}</div></td>
-      <td><input class="td-input" placeholder="例：冰箱、冷氣、窗簾" data-id="${row.id}" data-field="name" value="${esc(row.name)}" /></td>
-      <td><input class="td-input" type="number" min="1" step="1" placeholder="1" data-id="${row.id}" data-field="qty" value="${esc(row.qty)}" /></td>
+      <td style="min-width:160px;">
+        <textarea class="name-ta" placeholder="例：冰箱、冷氣、窗簾、床架" data-id="${row.id}" data-field="name" rows="1">${esc(row.name)}</textarea>
+      </td>
+      <td>
+        <div class="qty-ctrl">
+          <button class="qty-btn" data-id="${row.id}" data-action="minus">−</button>
+          <input class="td-input qty-num" type="number" min="1" step="1" data-id="${row.id}" data-field="qty" value="${esc(row.qty)}" />
+          <button class="qty-btn" data-id="${row.id}" data-action="plus">+</button>
+        </div>
+      </td>
       <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="price" value="${esc(row.price)}" /></td>
       <td><div class="subtotal-cell" data-id="${row.id}">${sub>0?fmt(sub):'—'}</div></td>
       <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="annualCost" value="${esc(row.annualCost)}" style="color:var(--amber);" /></td>
       <td><div class="src-wrap">
-        <input class="td-input" placeholder="來源名稱（momo、PChome、團購…）" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
+        <input class="td-input" placeholder="來源名稱" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
         <input class="td-input" placeholder="https://…（選填）" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${row.srcUrl?`<a class="src-link" href="${esc(row.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(row.srcLabel||row.srcUrl)}</a>`:''}
       </div></td>
       <td style="white-space:nowrap;">
-        <button class="del-btn move-wish-btn" data-id="${row.id}" title="移至許願表" style="color:var(--teal);font-size:12px;display:flex;align-items:center;gap:3px;padding:6px 8px;">${MOVE_DOWN_SVG}</button>
+        <button class="del-btn move-wish-btn" data-id="${row.id}" title="移至許願表" style="color:var(--teal);">${MOVE_DOWN_SVG}</button>
         <button class="del-btn" data-id="${row.id}" title="刪除">${DSVG}</button>
       </td>`;
     tbody.appendChild(tr);
+    /* textarea 自動高度 */
+    const ta=tr.querySelector('.name-ta');
+    ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
   });
 }
 
@@ -476,13 +502,28 @@ const tbody=document.getElementById('tableBody');
 tbody.addEventListener('compositionend',e=>{
   const el=e.target; if(!el.dataset.id)return;
   const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
-  r[el.dataset.field]=el.value; updateTotals(); persist();
+  r[el.dataset.field]=el.value;
+  if(el.tagName==='TEXTAREA'){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+  updateTotals(); persist();
 });
 tbody.addEventListener('input',e=>{
   const el=e.target; if(!el.dataset.id||e.isComposing)return;
   const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
-  r[el.dataset.field]=el.value; updateTotals(); persist();
+  r[el.dataset.field]=el.value;
+  if(el.tagName==='TEXTAREA'){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+  updateTotals(); persist();
 });
+tbody.addEventListener('click',e=>{
+  /* ± 數量 */
+  const qBtn=e.target.closest('.qty-btn');
+  if(qBtn&&qBtn.dataset.id){
+    const r=rows.find(r=>r.id===qBtn.dataset.id); if(!r)return;
+    const cur=parseInt(r.qty)||1;
+    r.qty = qBtn.dataset.action==='plus' ? cur+1 : Math.max(1,cur-1);
+    const inp=qBtn.parentElement.querySelector('input');
+    if(inp) inp.value=r.qty;
+    updateTotals(); persist(); return;
+  }
 tbody.addEventListener('change',e=>{
   const el=e.target; if(!el.dataset.id)return;
   const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
@@ -499,7 +540,7 @@ tbody.addEventListener('click',e=>{
   const moveBtn=e.target.closest('.move-wish-btn');
   if(moveBtn){
     const row=rows.find(r=>r.id===moveBtn.dataset.id); if(!row)return;
-    wishes.push({ id:uid(), name:row.name, category:'家電', price:'', priority:'★★★', note:'' });
+    wishes.push({ id:uid(), name:row.name, category:'家電', qty:row.qty||1, price:row.price, annualCost:row.annualCost, srcLabel:row.srcLabel, srcUrl:row.srcUrl, priority:'★★★', note:'' });
     rows=rows.filter(r=>r.id!==moveBtn.dataset.id);
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
@@ -666,11 +707,11 @@ document.getElementById('importModal').addEventListener('click',e=>{ if(e.target
 
 /* ══ 許願表 ══ */
 let wishes = [];
-const newWish = () => ({ id:uid(), name:'', category:'家具', price:'', priority:'★★★', note:'' });
+const newWish = () => ({ id:uid(), name:'', category:'家具', qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'', priority:'★★★', note:'' });
 const CATS = ['家具','軟裝','家電','廚衛','其他'];
 const PRIS = ['★★★','★★☆','★☆☆'];
 
-function getWishTotal(){ return wishes.reduce((s,w)=>s+(parseFloat(w.price)||0),0); }
+function getWishTotal(){ return wishes.reduce((s,w)=>s+(parseFloat(w.qty)||0)*(parseFloat(w.price)||0),0); }
 
 function updateWishTotal(){
   const t=getWishTotal();
@@ -682,21 +723,40 @@ function buildWishTable(){
   const tbody=document.getElementById('wishBody');
   tbody.innerHTML='';
   wishes.forEach((w,i)=>{
+    const sub=(parseFloat(w.qty)||0)*(parseFloat(w.price)||0);
     const tr=document.createElement('tr');
     const catOpts=CATS.map(c=>`<option${c===w.category?' selected':''}>${c}</option>`).join('');
     const priOpts=PRIS.map(p=>`<option${p===w.priority?' selected':''}>${p}</option>`).join('');
     tr.innerHTML=`
       <td><div class="td-num">${i+1}</div></td>
-      <td><input class="td-input" placeholder="例：餐桌、窗簾、床架" data-wid="${w.id}" data-wf="name" value="${esc(w.name)}" /></td>
+      <td style="min-width:160px;">
+        <textarea class="name-ta" placeholder="例：餐桌、窗簾、床架" data-wid="${w.id}" data-wf="name" rows="1">${esc(w.name)}</textarea>
+      </td>
       <td><select class="td-input" data-wid="${w.id}" data-wf="category" style="cursor:pointer;">${catOpts}</select></td>
+      <td>
+        <div class="qty-ctrl">
+          <button class="wish-qty-btn" data-wid="${w.id}" data-action="minus">−</button>
+          <input class="td-input qty-num" type="number" min="1" step="1" data-wid="${w.id}" data-wf="qty" value="${esc(w.qty)}" />
+          <button class="wish-qty-btn" data-wid="${w.id}" data-action="plus">+</button>
+        </div>
+      </td>
       <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="price" value="${esc(w.price)}" /></td>
+      <td><div class="subtotal-cell">${sub>0?fmt(sub):'—'}</div></td>
+      <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></td>
       <td><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></td>
+      <td><div class="src-wrap">
+        <input class="td-input" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
+        <input class="td-input" placeholder="https://…" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
+        ${w.srcUrl?`<a class="src-link" href="${esc(w.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(w.srcLabel||w.srcUrl)}</a>`:''}
+      </div></td>
       <td><input class="td-input" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
       <td style="white-space:nowrap;">
-        <button class="del-btn move-main-btn" data-wid="${w.id}" title="移至採購表" style="color:var(--teal);display:flex;align-items:center;gap:3px;padding:6px 8px;">${MOVE_UP_SVG}</button>
-        <button class="del-btn" data-wid="${w.id}">${DSVG}</button>
+        <button class="del-btn move-main-btn" data-wid="${w.id}" title="移至採購表" style="color:var(--teal);">${MOVE_UP_SVG}</button>
+        <button class="del-btn" data-wid="${w.id}" title="刪除">${DSVG}</button>
       </td>`;
     tbody.appendChild(tr);
+    const ta=tr.querySelector('.name-ta');
+    ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
   });
   updateWishTotal();
 }
@@ -707,28 +767,47 @@ const wishBody=document.getElementById('wishBody');
 wishBody.addEventListener('compositionend',e=>{
   const el=e.target; if(!el.dataset.wid)return;
   const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
-  w[el.dataset.wf]=el.value; updateWishTotal(); persistWishes();
+  w[el.dataset.wf]=el.value;
+  if(el.tagName==='TEXTAREA'){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+  updateWishTotal(); persistWishes();
 });
 wishBody.addEventListener('input',e=>{
   const el=e.target; if(!el.dataset.wid||e.isComposing)return;
   const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
-  w[el.dataset.wf]=el.value; updateWishTotal(); persistWishes();
+  w[el.dataset.wf]=el.value;
+  if(el.tagName==='TEXTAREA'){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+  updateWishTotal(); persistWishes();
 });
 wishBody.addEventListener('change',e=>{
   const el=e.target; if(!el.dataset.wid)return;
   const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
-  w[el.dataset.wf]=el.value; updateWishTotal(); persistWishes();
+  w[el.dataset.wf]=el.value;
+  if(el.dataset.wf==='srcUrl'||el.dataset.wf==='srcLabel'){
+    const wrap=el.closest('.src-wrap'); if(!wrap)return;
+    const old=wrap.querySelector('.src-link'); if(old)old.remove();
+    if(w.srcUrl){ const a=document.createElement('a'); a.className='src-link'; a.href=w.srcUrl; a.target='_blank'; a.rel='noopener'; a.innerHTML=`${LSVG} ${esc(w.srcLabel||w.srcUrl)}`; wrap.appendChild(a); }
+  }
+  updateWishTotal(); persistWishes();
 });
 wishBody.addEventListener('click',e=>{
+  /* ± 數量 */
+  const qBtn=e.target.closest('.wish-qty-btn');
+  if(qBtn&&qBtn.dataset.wid){
+    const w=wishes.find(x=>x.id===qBtn.dataset.wid); if(!w)return;
+    const cur=parseInt(w.qty)||1;
+    w.qty = qBtn.dataset.action==='plus' ? cur+1 : Math.max(1,cur-1);
+    const inp=qBtn.parentElement.querySelector('input');
+    if(inp) inp.value=w.qty;
+    updateWishTotal(); persistWishes(); return;
+  }
   /* 移至採購表 */
   const moveBtn=e.target.closest('.move-main-btn');
   if(moveBtn){
     const w=wishes.find(x=>x.id===moveBtn.dataset.wid); if(!w)return;
-    rows.push({ id:uid(), name:w.name, qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'' });
+    rows.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, annualCost:w.annualCost, srcLabel:w.srcLabel, srcUrl:w.srcUrl });
     wishes=wishes.filter(x=>x.id!==moveBtn.dataset.wid);
     buildTable(); updateTotals(); persist();
-    buildWishTable(); persistWishes();
-    return;
+    buildWishTable(); persistWishes(); return;
   }
   /* 刪除 */
   const btn=e.target.closest('.del-btn'); if(!btn||!btn.dataset.wid)return;
