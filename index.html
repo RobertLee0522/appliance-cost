@@ -132,6 +132,12 @@
   .src-link { display:inline-flex; align-items:center; gap:4px; padding:2px 12px 7px; font-size:12px; color:var(--teal); font-weight:500; text-decoration:none; }
   .src-link:hover { text-decoration:underline; }
   .src-thumb { display:block; max-width:72px; max-height:72px; margin:4px 12px 8px; border-radius:8px; border:0.5px solid var(--border2); object-fit:cover; cursor:zoom-in; box-shadow:var(--shadow-sm); transition:transform .15s; }
+  .img-upload-btn { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; color:var(--teal-dark); background:var(--teal-light); border:0.5px dashed color-mix(in srgb, var(--teal) 45%, transparent); border-radius:999px; padding:3px 10px; margin:3px 12px 2px; cursor:pointer; width:fit-content; transition:background .15s; }
+  .img-upload-btn:hover { background:color-mix(in srgb, var(--teal) 20%, var(--teal-light)); }
+  .img-thumb-wrap { position:relative; width:fit-content; margin:4px 12px 8px; }
+  .img-thumb-wrap .src-thumb { margin:0; }
+  .img-remove-btn { position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:var(--red); color:#fff; border:1.5px solid var(--bg); font-size:10px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .img-remove-btn:hover { background:#8a2424; }
   .src-thumb:hover { transform:scale(1.05); }
   .del-btn { background:none; border:none; cursor:pointer; color:var(--text3); padding:9px 10px; line-height:1; display:block; width:100%; border-radius:6px; transition:color .15s,background .15s; }
   .del-btn:hover { color:var(--red); background:var(--red-light); }
@@ -388,7 +394,7 @@ function doPost(e) {
           <th style="width:110px;text-align:right;">單價（元）</th>
           <th style="width:110px;text-align:right;">採購小計</th>
           <th style="width:120px;text-align:right;">每年花費（元）</th>
-          <th style="min-width:160px;">來源 / 網址</th>
+          <th style="min-width:180px;">來源 / 網址</th>
           <th style="width:40px;"></th>
         </tr>
       </thead>
@@ -460,7 +466,7 @@ function doPost(e) {
             <th style="width:100px;text-align:right;">小計</th>
             <th style="width:110px;text-align:right;">年費（元）</th>
             <th style="width:80px;text-align:center;">優先度</th>
-            <th style="min-width:150px;">來源 / 網址</th>
+            <th style="min-width:180px;">來源 / 網址</th>
             <th style="min-width:100px;">備註</th>
             <th style="width:60px;"></th>
           </tr>
@@ -499,7 +505,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v1.4';
+const APP_VERSION = 'v1.5';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -508,14 +514,40 @@ let rows = [], budget = 500000, saveTimer = null;
 const fmt    = n => 'NT$' + Math.round(n).toLocaleString('zh-TW');
 const uid    = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-const newRow = () => ({ id:uid(), name:'', qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'' });
+const newRow = () => ({ id:uid(), name:'', qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'', imgData:'' });
 
 function persist() {
-  try { localStorage.setItem(LS.ROWS,JSON.stringify(rows)); localStorage.setItem(LS.BUDGET,String(budget)); } catch(e){}
+  try { localStorage.setItem(LS.ROWS,JSON.stringify(rows)); localStorage.setItem(LS.BUDGET,String(budget)); } catch(e){ alert('本機儲存空間不足，最新的變更（可能是圖片）未能儲存。建議改貼圖片網址，或刪除部分已上傳的圖片。'); }
   clearTimeout(saveTimer);
   const h = document.getElementById('saveHint');
   h.classList.add('show');
   saveTimer = setTimeout(()=>h.classList.remove('show'),2000);
+}
+
+/* 讀取使用者上傳的圖片檔案，壓縮後轉為 base64 data URL（避免資料過大） */
+function readImageAsDataUrl(file, maxSize=480, quality=0.72){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type||!file.type.startsWith('image/')){ reject(new Error('請選擇圖片檔案')); return; }
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width, h=img.height;
+        if(w>maxSize||h>maxSize){
+          if(w>=h){ h=Math.round(h*maxSize/w); w=maxSize; }
+          else { w=Math.round(w*maxSize/h); h=maxSize; }
+        }
+        const canvas=document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=()=>reject(new Error('圖片讀取失敗'));
+      img.src=e.target.result;
+    };
+    reader.onerror=()=>reject(new Error('檔案讀取失敗'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function load() {
@@ -604,11 +636,12 @@ function buildTable() {
       <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="price" value="${esc(row.price)}" /></td>
       <td><div class="subtotal-cell" data-id="${row.id}">${sub>0?fmt(sub):'—'}</div></td>
       <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="annualCost" value="${esc(row.annualCost)}" style="color:var(--amber);" /></td>
-      <td><div class="src-wrap">
+      <td style="min-width:180px;"><div class="src-wrap">
         <input class="td-input" placeholder="來源名稱" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
         <input class="td-input" placeholder="https://…（選填）" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${row.srcUrl?`<a class="src-link" href="${esc(row.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(row.srcLabel||row.srcUrl)}</a>`:''}
-        ${srcThumbHtml(row.srcUrl)}
+        <label class="img-upload-btn">📷 上傳圖片<input type="file" accept="image/*" class="img-upload-input" data-id="${row.id}" hidden /></label>
+        ${row.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${row.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-id="${row.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(row.srcUrl)}
       </div></td>
       <td style="white-space:nowrap;">
         <button class="del-btn move-wish-btn" data-id="${row.id}" title="移至許願表" style="color:var(--teal);">${MOVE_DOWN_SVG}</button>
@@ -647,11 +680,17 @@ tbody.addEventListener('click',e=>{
     if(inp) inp.value=r.qty;
     updateTotals(); persist(); return;
   }
+  /* 移除已上傳圖片 */
+  const rmImgBtn=e.target.closest('.img-remove-btn');
+  if(rmImgBtn){
+    const r=rows.find(r=>r.id===rmImgBtn.dataset.id); if(!r)return;
+    r.imgData=''; buildTable(); updateTotals(); persist(); return;
+  }
   /* 移至許願表 */
   const moveBtn=e.target.closest('.move-wish-btn');
   if(moveBtn){
     const row=rows.find(r=>r.id===moveBtn.dataset.id); if(!row)return;
-    wishes.push({id:uid(),name:row.name,category:'家電',qty:row.qty||1,price:row.price,annualCost:row.annualCost,srcLabel:row.srcLabel,srcUrl:row.srcUrl,priority:'★★★',note:''});
+    wishes.push({id:uid(),name:row.name,category:'家電',qty:row.qty||1,price:row.price,annualCost:row.annualCost,srcLabel:row.srcLabel,srcUrl:row.srcUrl,imgData:row.imgData,priority:'★★★',note:''});
     rows=rows.filter(r=>r.id!==moveBtn.dataset.id);
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes(); return;
@@ -664,15 +703,26 @@ tbody.addEventListener('click',e=>{
 });
 tbody.addEventListener('change',e=>{
   const el=e.target; if(!el.dataset.id)return;
+  if(el.classList.contains('img-upload-input')){
+    const file=el.files&&el.files[0];
+    const r=rows.find(r=>r.id===el.dataset.id); if(!r||!file)return;
+    readImageAsDataUrl(file).then(dataUrl=>{ r.imgData=dataUrl; buildTable(); updateTotals(); persist(); })
+      .catch(err=>alert('圖片上傳失敗：'+err.message));
+    return;
+  }
+  if(!el.dataset.field)return;
   const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
   r[el.dataset.field]=el.value;
   if(el.dataset.field==='srcUrl'||el.dataset.field==='srcLabel'){
     const wrap=el.closest('.src-wrap'); if(!wrap)return;
     const old=wrap.querySelector('.src-link'); if(old)old.remove();
-    const oldThumb=wrap.querySelector('.src-thumb'); if(oldThumb)oldThumb.closest('a').remove();
+    if(!r.imgData){
+      const oldThumb=wrap.querySelector('.src-thumb');
+      if(oldThumb){ const a=oldThumb.closest('a'); if(a)a.remove(); else oldThumb.remove(); }
+    }
     if(r.srcUrl){
       const a=document.createElement('a');a.className='src-link';a.href=r.srcUrl;a.target='_blank';a.rel='noopener';a.innerHTML=`${LSVG} ${esc(r.srcLabel||r.srcUrl)}`;wrap.appendChild(a);
-      wrap.insertAdjacentHTML('beforeend', srcThumbHtml(r.srcUrl));
+      if(!r.imgData) wrap.insertAdjacentHTML('beforeend', srcThumbHtml(r.srcUrl));
     }
   }
   persist();
@@ -719,8 +769,12 @@ document.getElementById('copyBinBtn').addEventListener('click',()=>{
 /* 上傳 */
 document.getElementById('uploadBtn').addEventListener('click', async ()=>{
   const key=getKey(); if(!key) return;
-  setSyncStatus('loading','上傳中…');
   const payload={budget,rows,wishes};
+  const payloadSize=JSON.stringify(payload).length;
+  if(payloadSize>200000){
+    if(!confirm('資料量較大（約 '+Math.round(payloadSize/1024)+' KB，可能含有較多上傳圖片），雲端服務可能有大小限制導致上傳失敗或變慢。是否仍要嘗試上傳？'))return;
+  }
+  setSyncStatus('loading','上傳中…');
   try {
     let res;
     if(!getBin()){
@@ -785,12 +839,16 @@ document.getElementById('gsUrlInput').addEventListener('input', () => {
 });
 document.getElementById('gsUploadBtn').addEventListener('click', async () => {
   const url = getGsUrl(); if (!url) return;
+  const body = JSON.stringify({ budget, rows, wishes });
+  if (body.length > 45000) {
+    if (!confirm('資料量較大（約 ' + Math.round(body.length/1024) + ' KB，可能含有較多上傳圖片）。Google Sheets 單一儲存格上限約 5 萬字元，超過可能導致上傳失敗。是否仍要嘗試上傳？')) return;
+  }
   setGsSyncStatus('loading', '上傳中…');
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-      body: JSON.stringify({ budget, rows, wishes }),
+      body,
       redirect: 'follow'
     });
     const text = await res.text();
@@ -901,7 +959,7 @@ document.getElementById('importModal').addEventListener('click',e=>{ if(e.target
 
 /* ══ 許願表 ══ */
 let wishes = [];
-const newWish = () => ({ id:uid(), name:'', category:'家具', qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'', priority:'★★★', note:'' });
+const newWish = () => ({ id:uid(), name:'', category:'家具', qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'', imgData:'', priority:'★★★', note:'' });
 const CATS = ['家具','軟裝','家電','廚衛','其他'];
 const PRIS = ['★★★','★★☆','★☆☆'];
 
@@ -938,11 +996,12 @@ function buildWishTable(){
       <td><div class="subtotal-cell">${sub>0?fmt(sub):'—'}</div></td>
       <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></td>
       <td><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></td>
-      <td><div class="src-wrap">
+      <td style="min-width:180px;"><div class="src-wrap">
         <input class="td-input" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
         <input class="td-input" placeholder="https://…" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${w.srcUrl?`<a class="src-link" href="${esc(w.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(w.srcLabel||w.srcUrl)}</a>`:''}
-        ${srcThumbHtml(w.srcUrl)}
+        <label class="img-upload-btn">📷 上傳圖片<input type="file" accept="image/*" class="img-upload-input" data-wid="${w.id}" hidden /></label>
+        ${w.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${w.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-wid="${w.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(w.srcUrl)}
       </div></td>
       <td><input class="td-input" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
       <td style="white-space:nowrap;">
@@ -956,7 +1015,7 @@ function buildWishTable(){
   updateWishTotal();
 }
 
-function persistWishes(){ try{ localStorage.setItem('ar-wishes',JSON.stringify(wishes)); }catch(e){} }
+function persistWishes(){ try{ localStorage.setItem('ar-wishes',JSON.stringify(wishes)); }catch(e){ alert('本機儲存空間不足，最新的變更（可能是圖片）未能儲存。建議改貼圖片網址，或刪除部分已上傳的圖片。'); } }
 
 const wishBody=document.getElementById('wishBody');
 wishBody.addEventListener('compositionend',e=>{
@@ -975,15 +1034,26 @@ wishBody.addEventListener('input',e=>{
 });
 wishBody.addEventListener('change',e=>{
   const el=e.target; if(!el.dataset.wid)return;
+  if(el.classList.contains('img-upload-input')){
+    const file=el.files&&el.files[0];
+    const w=wishes.find(x=>x.id===el.dataset.wid); if(!w||!file)return;
+    readImageAsDataUrl(file).then(dataUrl=>{ w.imgData=dataUrl; buildWishTable(); persistWishes(); })
+      .catch(err=>alert('圖片上傳失敗：'+err.message));
+    return;
+  }
+  if(!el.dataset.wf)return;
   const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
   w[el.dataset.wf]=el.value;
   if(el.dataset.wf==='srcUrl'||el.dataset.wf==='srcLabel'){
     const wrap=el.closest('.src-wrap'); if(!wrap)return;
     const old=wrap.querySelector('.src-link'); if(old)old.remove();
-    const oldThumb=wrap.querySelector('.src-thumb'); if(oldThumb)oldThumb.closest('a').remove();
+    if(!w.imgData){
+      const oldThumb=wrap.querySelector('.src-thumb');
+      if(oldThumb){ const a=oldThumb.closest('a'); if(a)a.remove(); else oldThumb.remove(); }
+    }
     if(w.srcUrl){
       const a=document.createElement('a'); a.className='src-link'; a.href=w.srcUrl; a.target='_blank'; a.rel='noopener'; a.innerHTML=`${LSVG} ${esc(w.srcLabel||w.srcUrl)}`; wrap.appendChild(a);
-      wrap.insertAdjacentHTML('beforeend', srcThumbHtml(w.srcUrl));
+      if(!w.imgData) wrap.insertAdjacentHTML('beforeend', srcThumbHtml(w.srcUrl));
     }
   }
   updateWishTotal(); persistWishes();
@@ -999,11 +1069,17 @@ wishBody.addEventListener('click',e=>{
     if(inp) inp.value=w.qty;
     updateWishTotal(); persistWishes(); return;
   }
+  /* 移除已上傳圖片 */
+  const rmImgBtn=e.target.closest('.img-remove-btn');
+  if(rmImgBtn){
+    const w=wishes.find(x=>x.id===rmImgBtn.dataset.wid); if(!w)return;
+    w.imgData=''; buildWishTable(); persistWishes(); return;
+  }
   /* 移至採購表 */
   const moveBtn=e.target.closest('.move-main-btn');
   if(moveBtn){
     const w=wishes.find(x=>x.id===moveBtn.dataset.wid); if(!w)return;
-    rows.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, annualCost:w.annualCost, srcLabel:w.srcLabel, srcUrl:w.srcUrl });
+    rows.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, annualCost:w.annualCost, srcLabel:w.srcLabel, srcUrl:w.srcUrl, imgData:w.imgData });
     wishes=wishes.filter(x=>x.id!==moveBtn.dataset.wid);
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes(); return;
