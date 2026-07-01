@@ -132,8 +132,11 @@
   .src-link { display:inline-flex; align-items:center; gap:4px; padding:2px 12px 7px; font-size:12px; color:var(--teal); font-weight:500; text-decoration:none; }
   .src-link:hover { text-decoration:underline; }
   .src-thumb { display:block; max-width:72px; max-height:72px; margin:4px 12px 8px; border-radius:8px; border:0.5px solid var(--border2); object-fit:cover; cursor:zoom-in; box-shadow:var(--shadow-sm); transition:transform .15s; }
-  .img-upload-btn { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; color:var(--teal-dark); background:var(--teal-light); border:0.5px dashed color-mix(in srgb, var(--teal) 45%, transparent); border-radius:999px; padding:3px 10px; margin:3px 12px 2px; cursor:pointer; width:fit-content; transition:background .15s; }
+  .img-btn-row { display:flex; gap:6px; margin:3px 12px 2px; }
+  .img-upload-btn { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; color:var(--teal-dark); background:var(--teal-light); border:0.5px dashed color-mix(in srgb, var(--teal) 45%, transparent); border-radius:999px; padding:3px 10px; margin:0; cursor:pointer; width:fit-content; transition:background .15s; font-family:inherit; }
   .img-upload-btn:hover { background:color-mix(in srgb, var(--teal) 20%, var(--teal-light)); }
+  .img-paste-btn { color:var(--amber); background:var(--amber-light); border-color:color-mix(in srgb, var(--amber) 45%, transparent); }
+  .img-paste-btn:hover { background:color-mix(in srgb, var(--amber) 22%, var(--amber-light)); }
   .img-thumb-wrap { position:relative; width:fit-content; margin:4px 12px 8px; }
   .img-thumb-wrap .src-thumb { margin:0; }
   .img-remove-btn { position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:var(--red); color:#fff; border:1.5px solid var(--bg); font-size:10px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
@@ -505,7 +508,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v1.5';
+const APP_VERSION = 'v1.6';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -548,6 +551,25 @@ function readImageAsDataUrl(file, maxSize=480, quality=0.72){
     reader.onerror=()=>reject(new Error('檔案讀取失敗'));
     reader.readAsDataURL(file);
   });
+}
+
+/* 從貼上事件（Ctrl+V）的 DataTransferItemList 找出圖片檔案 */
+function findImageFileFromDataTransferItems(items){
+  if(!items) return null;
+  for(const item of items){
+    if(item.kind==='file' && item.type && item.type.startsWith('image/')) return item.getAsFile();
+  }
+  return null;
+}
+/* 從系統剪貼簿（點擊「貼上」按鈕）讀取圖片檔案 */
+async function findImageFileFromClipboard(){
+  if(!navigator.clipboard||!navigator.clipboard.read) throw new Error('此瀏覽器不支援剪貼簿讀取，請改用欄位內 Ctrl+V 貼上，或選擇「上傳」');
+  const items=await navigator.clipboard.read();
+  for(const item of items){
+    const type=item.types.find(t=>t.startsWith('image/'));
+    if(type) return await item.getType(type);
+  }
+  throw new Error('剪貼簿中沒有偵測到圖片，請先複製圖片後再試');
 }
 
 function load() {
@@ -640,7 +662,10 @@ function buildTable() {
         <input class="td-input" placeholder="來源名稱" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
         <input class="td-input" placeholder="https://…（選填）" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${row.srcUrl?`<a class="src-link" href="${esc(row.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(row.srcLabel||row.srcUrl)}</a>`:''}
-        <label class="img-upload-btn">📷 上傳圖片<input type="file" accept="image/*" class="img-upload-input" data-id="${row.id}" hidden /></label>
+        <div class="img-btn-row">
+          <label class="img-upload-btn">📷 上傳<input type="file" accept="image/*" class="img-upload-input" data-id="${row.id}" hidden /></label>
+          <button type="button" class="img-upload-btn img-paste-btn" data-id="${row.id}" title="從剪貼簿貼上圖片（複製截圖後點此，或直接在欄位內按 Ctrl+V）">📋 貼上</button>
+        </div>
         ${row.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${row.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-id="${row.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(row.srcUrl)}
       </div></td>
       <td style="white-space:nowrap;">
@@ -686,6 +711,14 @@ tbody.addEventListener('click',e=>{
     const r=rows.find(r=>r.id===rmImgBtn.dataset.id); if(!r)return;
     r.imgData=''; buildTable(); updateTotals(); persist(); return;
   }
+  /* 從剪貼簿貼上圖片 */
+  const pasteBtn=e.target.closest('.img-paste-btn');
+  if(pasteBtn){
+    const r=rows.find(r=>r.id===pasteBtn.dataset.id); if(!r)return;
+    findImageFileFromClipboard().then(readImageAsDataUrl).then(dataUrl=>{ r.imgData=dataUrl; buildTable(); updateTotals(); persist(); })
+      .catch(err=>alert(err.message));
+    return;
+  }
   /* 移至許願表 */
   const moveBtn=e.target.closest('.move-wish-btn');
   if(moveBtn){
@@ -700,6 +733,16 @@ tbody.addEventListener('click',e=>{
   if(!confirm('確定要刪除這筆資料嗎？'))return;
   rows=rows.filter(r=>r.id!==btn.dataset.id);
   buildTable(); updateTotals(); persist();
+});
+tbody.addEventListener('paste',e=>{
+  const el=e.target; if(!el.dataset.id)return;
+  if(el.dataset.field!=='srcLabel'&&el.dataset.field!=='srcUrl')return;
+  const dt=e.clipboardData||window.clipboardData; if(!dt)return;
+  const file=findImageFileFromDataTransferItems(dt.items); if(!file)return;
+  e.preventDefault();
+  const r=rows.find(r=>r.id===el.dataset.id); if(!r)return;
+  readImageAsDataUrl(file).then(dataUrl=>{ r.imgData=dataUrl; buildTable(); updateTotals(); persist(); })
+    .catch(err=>alert('圖片貼上失敗：'+err.message));
 });
 tbody.addEventListener('change',e=>{
   const el=e.target; if(!el.dataset.id)return;
@@ -1000,7 +1043,10 @@ function buildWishTable(){
         <input class="td-input" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
         <input class="td-input" placeholder="https://…" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${w.srcUrl?`<a class="src-link" href="${esc(w.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(w.srcLabel||w.srcUrl)}</a>`:''}
-        <label class="img-upload-btn">📷 上傳圖片<input type="file" accept="image/*" class="img-upload-input" data-wid="${w.id}" hidden /></label>
+        <div class="img-btn-row">
+          <label class="img-upload-btn">📷 上傳<input type="file" accept="image/*" class="img-upload-input" data-wid="${w.id}" hidden /></label>
+          <button type="button" class="img-upload-btn img-paste-btn" data-wid="${w.id}" title="從剪貼簿貼上圖片（複製截圖後點此，或直接在欄位內按 Ctrl+V）">📋 貼上</button>
+        </div>
         ${w.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${w.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-wid="${w.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(w.srcUrl)}
       </div></td>
       <td><input class="td-input" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
@@ -1031,6 +1077,16 @@ wishBody.addEventListener('input',e=>{
   w[el.dataset.wf]=el.value;
   if(el.tagName==='TEXTAREA'){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
   updateWishTotal(); persistWishes();
+});
+wishBody.addEventListener('paste',e=>{
+  const el=e.target; if(!el.dataset.wid)return;
+  if(el.dataset.wf!=='srcLabel'&&el.dataset.wf!=='srcUrl')return;
+  const dt=e.clipboardData||window.clipboardData; if(!dt)return;
+  const file=findImageFileFromDataTransferItems(dt.items); if(!file)return;
+  e.preventDefault();
+  const w=wishes.find(x=>x.id===el.dataset.wid); if(!w)return;
+  readImageAsDataUrl(file).then(dataUrl=>{ w.imgData=dataUrl; buildWishTable(); persistWishes(); })
+    .catch(err=>alert('圖片貼上失敗：'+err.message));
 });
 wishBody.addEventListener('change',e=>{
   const el=e.target; if(!el.dataset.wid)return;
@@ -1074,6 +1130,14 @@ wishBody.addEventListener('click',e=>{
   if(rmImgBtn){
     const w=wishes.find(x=>x.id===rmImgBtn.dataset.wid); if(!w)return;
     w.imgData=''; buildWishTable(); persistWishes(); return;
+  }
+  /* 從剪貼簿貼上圖片 */
+  const pasteBtn=e.target.closest('.img-paste-btn');
+  if(pasteBtn){
+    const w=wishes.find(x=>x.id===pasteBtn.dataset.wid); if(!w)return;
+    findImageFileFromClipboard().then(readImageAsDataUrl).then(dataUrl=>{ w.imgData=dataUrl; buildWishTable(); persistWishes(); })
+      .catch(err=>alert(err.message));
+    return;
   }
   /* 移至採購表 */
   const moveBtn=e.target.closest('.move-main-btn');
