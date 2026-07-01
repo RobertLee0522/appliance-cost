@@ -35,7 +35,7 @@
       var(--bg2);
     -webkit-font-smoothing:antialiased;
   }
-  .wrap { max-width:980px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  .wrap { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
   .card { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); }
 
   .btn { display:inline-flex; align-items:center; gap:5px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text2); font-size:12px; font-family:inherit; padding:7px 13px; cursor:pointer; transition:background .15s,color .15s,box-shadow .15s,transform .1s,border-color .15s; white-space:nowrap; }
@@ -156,6 +156,28 @@
   .file-drop-sub { font-size:12px; color:var(--text2); }
   .file-selected { font-size:13px; color:var(--teal); margin-top:8px; font-weight:500; }
 
+  /* 平板：維持單欄排版但收斂邊距 */
+  @media(max-width:900px) and (min-width:601px){
+    .wrap { max-width:720px; }
+    .page-header { padding:1.2rem 1.3rem; }
+  }
+  /* 大螢幕桌機：加寬版面並放大字級，閱讀更舒適 */
+  @media(min-width:1280px){
+    .wrap { max-width:1320px; gap:16px; }
+    body { padding-top:2.75rem; padding-bottom:3.5rem; }
+    .page-header { padding:1.6rem 2.2rem; }
+    .page-header h1 { font-size:20px; }
+    .page-header p { font-size:13px; }
+    .header-icon { width:40px; height:40px; border-radius:12px; }
+    .header-icon svg { width:20px; height:20px; }
+    .metric-card { padding:1.3rem 1.6rem; }
+    .metric-val { font-size:25px; }
+    .metric-icon { width:28px; height:28px; font-size:14px; }
+    th { font-size:11.5px; padding:12px 14px; }
+    .td-input { font-size:14.5px; }
+    .subtotal-cell { font-size:14.5px; }
+    .tf-total { font-size:17px; }
+  }
   @media(max-width:600px){
     .metrics { grid-template-columns:1fr 1fr; }
     .metrics .metric-card:last-child { grid-column:span 2; }
@@ -477,7 +499,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v1.3';
+const APP_VERSION = 'v1.4';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
