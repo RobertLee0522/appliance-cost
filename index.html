@@ -250,9 +250,12 @@
   <!-- Sync Panel -->
   <div class="card sync-panel">
     <div class="sync-header">
-      <div class="sync-title">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"/></svg>
-        雲端同步
+      <div>
+        <div class="sync-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"/></svg>
+          雲端同步
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px;">僅同步文字資料，「上傳圖片」的圖片只存於本機裝置，不會上傳雲端</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="sync-status idle" id="syncStatus">尚未設定</span>
@@ -508,7 +511,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v1.6';
+const APP_VERSION = 'v1.7';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -809,14 +812,16 @@ document.getElementById('copyBinBtn').addEventListener('click',()=>{
   navigator.clipboard.writeText(v).then(()=>alert('Bin ID 已複製：\n'+v)).catch(()=>alert('Bin ID：'+v));
 });
 
-/* 上傳 */
+/* 上傳（雲端只保留文字資料，已上傳的圖片僅存於本機，不會上傳） */
+const stripImages = arr => arr.map(({imgData, ...rest}) => rest);
+/* 下載後合併：雲端沒有圖片欄位，改保留本機原有的圖片（依 id 對應） */
+function mergeLocalImages(newArr, oldArr){
+  const oldMap = new Map(oldArr.map(x=>[x.id, x.imgData]));
+  return newArr.map(x => ({ ...x, imgData: x.imgData || oldMap.get(x.id) || '' }));
+}
 document.getElementById('uploadBtn').addEventListener('click', async ()=>{
   const key=getKey(); if(!key) return;
-  const payload={budget,rows,wishes};
-  const payloadSize=JSON.stringify(payload).length;
-  if(payloadSize>200000){
-    if(!confirm('資料量較大（約 '+Math.round(payloadSize/1024)+' KB，可能含有較多上傳圖片），雲端服務可能有大小限制導致上傳失敗或變慢。是否仍要嘗試上傳？'))return;
-  }
+  const payload={budget,rows:stripImages(rows),wishes:stripImages(wishes)};
   setSyncStatus('loading','上傳中…');
   try {
     let res;
@@ -849,8 +854,8 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
     const rec=d.record;
     if(!rec||!Array.isArray(rec.rows)) throw new Error('資料格式不正確');
     if(!confirm(`下載後將覆蓋目前資料（${rec.rows.length} 筆）。確定繼續？`)){ setSyncStatus('idle','已取消'); return; }
-    rows=rec.rows; budget=parseFloat(rec.budget)||500000;
-    if(Array.isArray(rec.wishes)) wishes=rec.wishes;
+    rows=mergeLocalImages(rec.rows,rows); budget=parseFloat(rec.budget)||500000;
+    if(Array.isArray(rec.wishes)) wishes=mergeLocalImages(rec.wishes,wishes);
     document.getElementById('budgetInput').value=budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
@@ -882,10 +887,7 @@ document.getElementById('gsUrlInput').addEventListener('input', () => {
 });
 document.getElementById('gsUploadBtn').addEventListener('click', async () => {
   const url = getGsUrl(); if (!url) return;
-  const body = JSON.stringify({ budget, rows, wishes });
-  if (body.length > 45000) {
-    if (!confirm('資料量較大（約 ' + Math.round(body.length/1024) + ' KB，可能含有較多上傳圖片）。Google Sheets 單一儲存格上限約 5 萬字元，超過可能導致上傳失敗。是否仍要嘗試上傳？')) return;
-  }
+  const body = JSON.stringify({ budget, rows:stripImages(rows), wishes:stripImages(wishes) });
   setGsSyncStatus('loading', '上傳中…');
   try {
     const res = await fetch(url, {
@@ -913,8 +915,8 @@ document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
     if (rec.error) throw new Error(rec.error);
     if (!Array.isArray(rec.rows)) throw new Error('資料格式不正確（缺少 rows）');
     if (!confirm(`下載後將覆蓋目前資料（${rec.rows.length} 筆）。確定繼續？`)) { setGsSyncStatus('idle','已取消'); return; }
-    rows = rec.rows; budget = parseFloat(rec.budget) || 500000;
-    if (Array.isArray(rec.wishes)) wishes = rec.wishes;
+    rows = mergeLocalImages(rec.rows,rows); budget = parseFloat(rec.budget) || 500000;
+    if (Array.isArray(rec.wishes)) wishes = mergeLocalImages(rec.wishes,wishes);
     document.getElementById('budgetInput').value = budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
