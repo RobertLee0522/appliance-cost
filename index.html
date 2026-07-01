@@ -524,7 +524,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v1.8';
+const APP_VERSION = 'v1.9';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -543,8 +543,8 @@ function persist() {
   saveTimer = setTimeout(()=>h.classList.remove('show'),2000);
 }
 
-/* 讀取使用者上傳的圖片檔案，壓縮後轉為 base64 data URL（避免資料過大） */
-function readImageAsDataUrl(file, maxSize=480, quality=0.72){
+/* 讀取使用者上傳的圖片檔案，壓縮後轉為 base64 data URL（避免資料過大，同時盡量保留放大預覽的畫質） */
+function readImageAsDataUrl(file, maxSize=1000, quality=0.85){
   return new Promise((resolve,reject)=>{
     if(!file||!file.type||!file.type.startsWith('image/')){ reject(new Error('請選擇圖片檔案')); return; }
     const reader=new FileReader();
