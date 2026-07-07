@@ -494,6 +494,57 @@ function doPost(e) {
     </div>
   </div>
 
+  <!-- 已購買清單 -->
+  <div class="card wish-card" style="padding:1.3rem 1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.1rem;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="wish-icon-badge" style="background:linear-gradient(135deg,var(--teal-light),#cdeee0);">✅</span>
+        <div>
+          <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:7px;">
+            已購買清單
+            <span style="font-size:11px;color:var(--text2);font-weight:500;background:var(--bg2);padding:2px 9px;border-radius:999px;">訂金／尾款追蹤</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">記錄已下訂或已購買的項目。可從上方採購表按「帶入已購」自動帶入，不用重打</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--text2);">尾款待付</span>
+        <span id="purchaseRemainTotal" style="font-size:16px;font-weight:700;color:var(--amber);">NT$0</span>
+        <button class="btn primary" id="addPurchaseBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增
+        </button>
+      </div>
+    </div>
+    <div class="table-card" style="border-radius:var(--radius);border:0.5px solid var(--border);">
+      <table style="min-width:860px;">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th style="min-width:150px;">項目名稱</th>
+            <th style="width:90px;text-align:right;">數量</th>
+            <th style="width:110px;text-align:right;">單價（元）</th>
+            <th style="width:110px;text-align:right;">總價</th>
+            <th style="width:120px;text-align:right;">已付訂金（元）</th>
+            <th style="width:120px;text-align:right;">剩餘尾款</th>
+            <th style="min-width:100px;">備註</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="purchaseBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4"><div class="tf-label">合計</div></td>
+            <td><div class="tf-total" id="purchaseTotalCell" style="text-align:right;font-size:14px;">NT$0</div></td>
+            <td><div class="tf-total" id="purchaseDepositCell" style="text-align:right;font-size:14px;color:var(--teal-dark);">NT$0</div></td>
+            <td><div class="tf-total" id="purchaseRemainCell" style="text-align:right;color:var(--amber);">NT$0</div></td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <!-- Import Modal -->
@@ -524,7 +575,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v1.9';
+const APP_VERSION = 'v2.0';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -590,16 +641,18 @@ async function findImageFileFromClipboard(){
 
 function load() {
   try {
-    const r=localStorage.getItem(LS.ROWS), b=localStorage.getItem(LS.BUDGET), w=localStorage.getItem('ar-wishes');
+    const r=localStorage.getItem(LS.ROWS), b=localStorage.getItem(LS.BUDGET), w=localStorage.getItem('ar-wishes'), pc=localStorage.getItem('ar-purchases');
     if(r) rows=JSON.parse(r);
     if(b) budget=parseFloat(b)||500000;
     if(w) wishes=JSON.parse(w);
+    if(pc) purchases=JSON.parse(pc);
   } catch(e){}
   if(!rows.length)   rows=[newRow(),newRow(),newRow()];
   if(!wishes.length) wishes=[newWish()];
   document.getElementById('budgetInput').value = budget;
   buildTable(); updateTotals();
   buildWishTable();
+  buildPurchaseTable();
 }
 
 const getTotal       = () => rows.reduce((s,r)=>s+(parseFloat(r.qty)||0)*(parseFloat(r.price)||0),0);
@@ -685,6 +738,7 @@ function buildTable() {
         ${row.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${row.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-id="${row.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(row.srcUrl)}
       </div></td>
       <td style="white-space:nowrap;">
+        <button class="del-btn copy-purchase-btn" data-id="${row.id}" title="帶入已購買清單（記錄訂金/尾款）" style="color:var(--amber);font-size:13px;line-height:1;">✅</button>
         <button class="del-btn move-wish-btn" data-id="${row.id}" title="移至許願表" style="color:var(--teal);">${MOVE_DOWN_SVG}</button>
         <button class="del-btn" data-id="${row.id}" title="刪除">${DSVG}</button>
       </td>`;
@@ -735,6 +789,16 @@ tbody.addEventListener('click',e=>{
     const r=rows.find(r=>r.id===pasteBtn.dataset.id); if(!r)return;
     findImageFileFromClipboard().then(readImageAsDataUrl).then(dataUrl=>{ r.imgData=dataUrl; buildTable(); updateTotals(); persist(); })
       .catch(err=>alert(err.message));
+    return;
+  }
+  /* 帶入已購買清單（複製，不移除原列） */
+  const copyPurchaseBtn=e.target.closest('.copy-purchase-btn');
+  if(copyPurchaseBtn){
+    const row=rows.find(r=>r.id===copyPurchaseBtn.dataset.id); if(!row)return;
+    purchases.push({ id:uid(), name:row.name, qty:row.qty||1, price:row.price, deposit:'', note:'' });
+    buildPurchaseTable(); persistPurchases();
+    const tas=document.querySelectorAll('#purchaseBody input[data-pf="deposit"]');
+    if(tas.length){ tas[tas.length-1].focus(); tas[tas.length-1].scrollIntoView({block:'center',behavior:'smooth'}); }
     return;
   }
   /* 移至許願表 */
@@ -836,7 +900,7 @@ function mergeLocalImages(newArr, oldArr){
 }
 document.getElementById('uploadBtn').addEventListener('click', async ()=>{
   const key=getKey(); if(!key) return;
-  const payload={budget,rows:stripImages(rows),wishes:stripImages(wishes)};
+  const payload={budget,rows:stripImages(rows),wishes:stripImages(wishes),purchases};
   setSyncStatus('loading','上傳中…');
   try {
     let res;
@@ -871,9 +935,11 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
     if(!confirm(`下載後將覆蓋目前資料（${rec.rows.length} 筆）。確定繼續？`)){ setSyncStatus('idle','已取消'); return; }
     rows=mergeLocalImages(rec.rows,rows); budget=parseFloat(rec.budget)||500000;
     if(Array.isArray(rec.wishes)) wishes=mergeLocalImages(rec.wishes,wishes);
+    if(Array.isArray(rec.purchases)) purchases=rec.purchases;
     document.getElementById('budgetInput').value=budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
+    buildPurchaseTable(); persistPurchases();
     setSyncStatus('ok','下載成功 '+new Date().toLocaleTimeString('zh-TW'));
   } catch(e){ setSyncStatus('err','下載失敗：'+e.message); alert('下載失敗：\n'+e.message); }
 });
@@ -902,7 +968,7 @@ document.getElementById('gsUrlInput').addEventListener('input', () => {
 });
 document.getElementById('gsUploadBtn').addEventListener('click', async () => {
   const url = getGsUrl(); if (!url) return;
-  const body = JSON.stringify({ budget, rows:stripImages(rows), wishes:stripImages(wishes) });
+  const body = JSON.stringify({ budget, rows:stripImages(rows), wishes:stripImages(wishes), purchases });
   setGsSyncStatus('loading', '上傳中…');
   try {
     const res = await fetch(url, {
@@ -932,9 +998,11 @@ document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
     if (!confirm(`下載後將覆蓋目前資料（${rec.rows.length} 筆）。確定繼續？`)) { setGsSyncStatus('idle','已取消'); return; }
     rows = mergeLocalImages(rec.rows,rows); budget = parseFloat(rec.budget) || 500000;
     if (Array.isArray(rec.wishes)) wishes = mergeLocalImages(rec.wishes,wishes);
+    if (Array.isArray(rec.purchases)) purchases = rec.purchases;
     document.getElementById('budgetInput').value = budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
+    buildPurchaseTable(); persistPurchases();
     setGsSyncStatus('ok', '下載成功 ' + new Date().toLocaleTimeString('zh-TW'));
   } catch (e) {
     setGsSyncStatus('err', '下載失敗：' + e.message);
@@ -954,7 +1022,7 @@ updateGsBtns();
 
 /* ══ Export ══ */
 document.getElementById('exportBtn').addEventListener('click', async ()=>{
-  const data=JSON.stringify({budget,rows,wishes},null,2);
+  const data=JSON.stringify({budget,rows,wishes,purchases},null,2);
   const fname='電器採購資料_'+new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')+'.json';
   const blob=new Blob([data],{type:'application/json'});
   if(navigator.canShare&&navigator.canShare({files:[new File([blob],fname,{type:'application/json'})]})){
@@ -1004,9 +1072,11 @@ document.getElementById('importConfirmBtn').addEventListener('click',()=>{
   if(!pendingImport)return;
   rows=pendingImport.rows; budget=parseFloat(pendingImport.budget)||500000;
   wishes=Array.isArray(pendingImport.wishes)?pendingImport.wishes:[];
+  purchases=Array.isArray(pendingImport.purchases)?pendingImport.purchases:[];
   document.getElementById('budgetInput').value=budget;
   buildTable(); updateTotals(); persist();
   buildWishTable(); persistWishes();
+  buildPurchaseTable(); persistPurchases();
   document.getElementById('importModal').classList.remove('open');
   alert('匯入成功！共 '+rows.length+' 筆採購資料，'+wishes.length+' 筆許願資料。');
 });
@@ -1043,6 +1113,12 @@ function updateWishTotal(){
   const t=getWishTotal();
   document.getElementById('wishTotal').textContent     = fmt(t);
   document.getElementById('wishTotalCell').textContent = fmt(t);
+  /* 逐列更新小計（輸入單價/數量時即時反映） */
+  wishes.forEach(w=>{
+    const sub=(parseFloat(w.qty)||0)*(parseFloat(w.price)||0);
+    const s=document.querySelector('.subtotal-cell[data-wid="'+w.id+'"]');
+    if(s) s.textContent=sub>0?fmt(sub):'—';
+  });
 }
 
 function buildWishTable(){
@@ -1067,7 +1143,7 @@ function buildWishTable(){
         </div>
       </td>
       <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="price" value="${esc(w.price)}" /></td>
-      <td><div class="subtotal-cell">${sub>0?fmt(sub):'—'}</div></td>
+      <td><div class="subtotal-cell" data-wid="${w.id}">${sub>0?fmt(sub):'—'}</div></td>
       <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></td>
       <td><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></td>
       <td style="min-width:180px;"><div class="src-wrap">
@@ -1191,6 +1267,104 @@ document.getElementById('addWishBtn').addEventListener('click',()=>{
   wishes.push(newWish()); buildWishTable(); persistWishes();
   const inputs=document.querySelectorAll('#wishBody .td-input[data-wf="name"]');
   if(inputs.length) inputs[inputs.length-1].focus();
+});
+
+/* ══ 已購買清單（訂金／尾款追蹤） ══ */
+let purchases = [];
+const newPurchase = () => ({ id:uid(), name:'', qty:1, price:'', deposit:'', note:'' });
+function persistPurchases(){ try{ localStorage.setItem('ar-purchases',JSON.stringify(purchases)); }catch(e){} }
+
+function updatePurchaseTotals(){
+  let total=0, deposit=0;
+  purchases.forEach(p=>{
+    const sub=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
+    const dep=parseFloat(p.deposit)||0;
+    total+=sub; deposit+=dep;
+    const s=document.querySelector('.subtotal-cell[data-pid="'+p.id+'"]');
+    if(s) s.textContent=sub>0?fmt(sub):'—';
+    const rm=document.querySelector('.remain-cell[data-pid="'+p.id+'"]');
+    if(rm){
+      const remain=sub-dep;
+      rm.textContent=sub>0||dep>0?fmt(remain):'—';
+      rm.style.color=remain>0?'var(--amber)':'var(--teal-dark)';
+    }
+  });
+  const remainAll=total-deposit;
+  document.getElementById('purchaseTotalCell').textContent   = fmt(total);
+  document.getElementById('purchaseDepositCell').textContent = fmt(deposit);
+  document.getElementById('purchaseRemainCell').textContent  = fmt(remainAll);
+  document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
+}
+
+function buildPurchaseTable(){
+  const tbody=document.getElementById('purchaseBody');
+  tbody.innerHTML='';
+  purchases.forEach((p,i)=>{
+    const sub=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
+    const dep=parseFloat(p.deposit)||0;
+    const remain=sub-dep;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="td-num">${i+1}</div></td>
+      <td style="min-width:160px;">
+        <textarea class="name-ta" placeholder="例：冰箱、沙發" data-pid="${p.id}" data-pf="name" rows="1">${esc(p.name)}</textarea>
+      </td>
+      <td>
+        <div class="qty-ctrl">
+          <button class="purchase-qty-btn" data-pid="${p.id}" data-action="minus">−</button>
+          <input class="td-input qty-num" type="number" min="1" step="1" data-pid="${p.id}" data-pf="qty" value="${esc(p.qty)}" />
+          <button class="purchase-qty-btn" data-pid="${p.id}" data-action="plus">+</button>
+        </div>
+      </td>
+      <td><input class="td-input" type="number" min="0" placeholder="0" data-pid="${p.id}" data-pf="price" value="${esc(p.price)}" /></td>
+      <td><div class="subtotal-cell" data-pid="${p.id}">${sub>0?fmt(sub):'—'}</div></td>
+      <td><input class="td-input" type="number" min="0" placeholder="0" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
+      <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep>0?fmt(remain):'—'}</div></td>
+      <td><input class="td-input" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
+      <td><button class="del-btn" data-pid="${p.id}" title="刪除">${DSVG}</button></td>`;
+    tbody.appendChild(tr);
+    const ta=tr.querySelector('.name-ta');
+    ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
+  });
+  updatePurchaseTotals();
+}
+
+const purchaseBody=document.getElementById('purchaseBody');
+purchaseBody.addEventListener('compositionend',e=>{
+  const el=e.target; if(!el.dataset.pid)return;
+  const p=purchases.find(x=>x.id===el.dataset.pid); if(!p)return;
+  p[el.dataset.pf]=el.value;
+  if(el.tagName==='TEXTAREA'){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+  updatePurchaseTotals(); persistPurchases();
+});
+purchaseBody.addEventListener('input',e=>{
+  const el=e.target; if(!el.dataset.pid||e.isComposing)return;
+  const p=purchases.find(x=>x.id===el.dataset.pid); if(!p)return;
+  p[el.dataset.pf]=el.value;
+  if(el.tagName==='TEXTAREA'){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+  updatePurchaseTotals(); persistPurchases();
+});
+purchaseBody.addEventListener('click',e=>{
+  /* ± 數量 */
+  const qBtn=e.target.closest('.purchase-qty-btn');
+  if(qBtn&&qBtn.dataset.pid){
+    const p=purchases.find(x=>x.id===qBtn.dataset.pid); if(!p)return;
+    const cur=parseInt(p.qty)||1;
+    p.qty = qBtn.dataset.action==='plus' ? cur+1 : Math.max(1,cur-1);
+    const inp=qBtn.parentElement.querySelector('input');
+    if(inp) inp.value=p.qty;
+    updatePurchaseTotals(); persistPurchases(); return;
+  }
+  /* 刪除 */
+  const btn=e.target.closest('.del-btn'); if(!btn||!btn.dataset.pid)return;
+  if(!confirm('確定刪除這筆已購項目？'))return;
+  purchases=purchases.filter(x=>x.id!==btn.dataset.pid);
+  buildPurchaseTable(); persistPurchases();
+});
+document.getElementById('addPurchaseBtn').addEventListener('click',()=>{
+  purchases.push(newPurchase()); buildPurchaseTable(); persistPurchases();
+  const tas=document.querySelectorAll('#purchaseBody .name-ta');
+  if(tas.length) tas[tas.length-1].focus();
 });
 
 /* ══ 初始化：從 localStorage 讀取本機資料 ══ */
