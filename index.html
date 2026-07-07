@@ -507,9 +507,19 @@ function doPost(e) {
           <div style="font-size:12px;color:var(--text2);margin-top:3px;">記錄已下訂或已購買的項目。可從上方採購表按「帶入已購」自動帶入，不用重打</div>
         </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <span style="font-size:12px;color:var(--text2);">尾款待付</span>
-        <span id="purchaseRemainTotal" style="font-size:16px;font-weight:700;color:var(--amber);">NT$0</span>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:6px;align-items:baseline;">
+          <span style="font-size:12px;color:var(--text2);">總金額</span>
+          <span id="purchaseGrandTotal" style="font-size:16px;font-weight:700;color:var(--text);">NT$0</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:baseline;">
+          <span style="font-size:12px;color:var(--text2);">已付款</span>
+          <span id="purchasePaidTotal" style="font-size:16px;font-weight:700;color:var(--teal);">NT$0</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:baseline;">
+          <span style="font-size:12px;color:var(--text2);">尾款待付</span>
+          <span id="purchaseRemainTotal" style="font-size:16px;font-weight:700;color:var(--amber);">NT$0</span>
+        </div>
         <button class="btn primary" id="addPurchaseBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           新增
@@ -575,7 +585,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.2';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1335,6 +1345,8 @@ function updatePurchaseTotals(){
   document.getElementById('purchaseTotalCell').textContent   = fmt(total);
   document.getElementById('purchaseDepositCell').textContent = fmt(deposit);
   document.getElementById('purchaseRemainCell').textContent  = fmt(remainAll);
+  document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
+  document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
 }
 
