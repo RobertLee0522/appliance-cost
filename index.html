@@ -575,7 +575,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.0';
+const APP_VERSION = 'v2.1';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -898,6 +898,30 @@ function mergeLocalImages(newArr, oldArr){
   const oldMap = new Map(oldArr.map(x=>[x.id, x.imgData]));
   return newArr.map(x => ({ ...x, imgData: x.imgData || oldMap.get(x.id) || '' }));
 }
+
+/* ── 同步錯誤訊息說明 ── */
+/* 網路層錯誤（fetch 直接丟例外，拿不到 HTTP 狀態碼時） */
+function friendlyNetworkError(e){
+  const msg=String(e&&e.message||e);
+  if(e instanceof TypeError||/failed to fetch|networkerror|load failed/i.test(msg)){
+    return '無法連線到伺服器（請求送不出去）。可能原因：\n・網路未連線或不穩定\n・瀏覽器擴充功能（如廣告攔截器）擋住了請求\n・對方服務暫時掛掉\n\n請確認網路正常後再試一次。';
+  }
+  return msg;
+}
+/* JSONBin 依 HTTP 狀態碼給中文說明 */
+function jsonbinErrorHint(status, apiMsg){
+  const hints={
+    400:'請求格式不正確，資料可能損壞。',
+    401:'Master Key 無效。請到 jsonbin.io → API Keys 重新複製 Master Key，整串貼入設定（開頭通常是 $2a$ 或 $2b$）。',
+    403:'沒有存取權限。請確認 Master Key 是否貼錯，或這個 Bin 是否屬於別人的帳號。',
+    404:'找不到這個 Bin ID。請確認 Bin ID 沒有貼錯；若想重新建立，把 Bin ID 欄位清空後再按「上傳」。',
+    413:'資料量過大，超過 JSONBin 免費方案的單筆大小限制。',
+    429:'請求太頻繁被暫時限流，請等一分鐘再試。'
+  };
+  let out='HTTP '+status+(hints[status]?'：'+hints[status]:'');
+  if(apiMsg) out+='\n\n伺服器回應：'+apiMsg;
+  return out;
+}
 document.getElementById('uploadBtn').addEventListener('click', async ()=>{
   const key=getKey(); if(!key) return;
   const payload={budget,rows:stripImages(rows),wishes:stripImages(wishes),purchases};
@@ -906,8 +930,8 @@ document.getElementById('uploadBtn').addEventListener('click', async ()=>{
     let res;
     if(!getBin()){
       res=await fetch(`${JBIN}/b`,{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'appliance-cost','X-Bin-Private':'false'},body:JSON.stringify(payload)});
-      const d=await res.json();
-      if(!res.ok) throw new Error(d.message||res.status);
+      let d={}; try{ d=await res.json(); }catch(_){}
+      if(!res.ok) throw new Error(jsonbinErrorHint(res.status, d.message));
       const id=d.metadata.id;
       document.getElementById('binIdInput').value=id;
       localStorage.setItem('jb-bin',id);
@@ -915,11 +939,15 @@ document.getElementById('uploadBtn').addEventListener('click', async ()=>{
       updateSyncBtns();
     } else {
       res=await fetch(`${JBIN}/b/${getBin()}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key},body:JSON.stringify(payload)});
-      const d=await res.json();
-      if(!res.ok) throw new Error(d.message||res.status);
+      let d={}; try{ d=await res.json(); }catch(_){}
+      if(!res.ok) throw new Error(jsonbinErrorHint(res.status, d.message));
     }
     setSyncStatus('ok','上傳成功 '+new Date().toLocaleTimeString('zh-TW'));
-  } catch(e){ setSyncStatus('err','上傳失敗：'+e.message); alert('上傳失敗：\n'+e.message); }
+  } catch(e){
+    const msg=friendlyNetworkError(e);
+    setSyncStatus('err','上傳失敗（點「上傳」重試）');
+    alert('JSONBin 上傳失敗\n\n'+msg);
+  }
 });
 
 /* 下載 */
@@ -928,10 +956,10 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
   setSyncStatus('loading','下載中…');
   try {
     const res=await fetch(`${JBIN}/b/${bin}/latest`,{headers:{'X-Master-Key':key}});
-    const d=await res.json();
-    if(!res.ok) throw new Error(d.message||res.status);
+    let d={}; try{ d=await res.json(); }catch(_){}
+    if(!res.ok) throw new Error(jsonbinErrorHint(res.status, d.message));
     const rec=d.record;
-    if(!rec||!Array.isArray(rec.rows)) throw new Error('資料格式不正確');
+    if(!rec||!Array.isArray(rec.rows)) throw new Error('雲端資料格式不正確（缺少 rows）。這個 Bin 可能不是本工具建立的，請確認 Bin ID。');
     if(!confirm(`下載後將覆蓋目前資料（${rec.rows.length} 筆）。確定繼續？`)){ setSyncStatus('idle','已取消'); return; }
     rows=mergeLocalImages(rec.rows,rows); budget=parseFloat(rec.budget)||500000;
     if(Array.isArray(rec.wishes)) wishes=mergeLocalImages(rec.wishes,wishes);
@@ -941,7 +969,11 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
     buildWishTable(); persistWishes();
     buildPurchaseTable(); persistPurchases();
     setSyncStatus('ok','下載成功 '+new Date().toLocaleTimeString('zh-TW'));
-  } catch(e){ setSyncStatus('err','下載失敗：'+e.message); alert('下載失敗：\n'+e.message); }
+  } catch(e){
+    const msg=friendlyNetworkError(e);
+    setSyncStatus('err','下載失敗（點「下載」重試）');
+    alert('JSONBin 下載失敗\n\n'+msg);
+  }
 });
 
 /* 讀取已存設定 */
@@ -966,6 +998,15 @@ function updateGsBtns() {
 document.getElementById('gsUrlInput').addEventListener('input', () => {
   localStorage.setItem('gs-url', getGsUrl()); updateGsBtns();
 });
+/* Google Apps Script 常見錯誤的中文說明 */
+function gsErrorHint(e, status){
+  if(e instanceof TypeError||/failed to fetch|networkerror|load failed/i.test(String(e&&e.message||e))){
+    return '無法連線到 Google Apps Script。最常見的原因：\n・Web App URL 貼錯（結尾必須是 /exec，不是 /dev 或編輯器網址）\n・部署時「存取權」沒有選「所有人」\n・修改程式碼後沒有重新「部署 → 管理部署作業 → 編輯 → 新版本」\n・網路未連線或被擴充功能（廣告攔截器）擋住\n\n請依上面逐項檢查後再試。';
+  }
+  if(status===401||status===403) return 'HTTP '+status+'：沒有存取權限。請重新部署 Web App，「執行身分」選「我」、「存取權」選「所有人」。';
+  if(status===404) return 'HTTP 404：找不到這個網址。請確認 Web App URL 是否完整（https://script.google.com/macros/s/…/exec）。';
+  return String(e&&e.message||e);
+}
 document.getElementById('gsUploadBtn').addEventListener('click', async () => {
   const url = getGsUrl(); if (!url) return;
   const body = JSON.stringify({ budget, rows:stripImages(rows), wishes:stripImages(wishes), purchases });
@@ -977,13 +1018,14 @@ document.getElementById('gsUploadBtn').addEventListener('click', async () => {
       body,
       redirect: 'follow'
     });
+    if (!res.ok) { const err=new Error('HTTP '+res.status); err.httpStatus=res.status; throw err; }
     const text = await res.text();
     let d; try { d = JSON.parse(text); } catch { d = {}; }
-    if (d.ok === false) throw new Error(d.error || '伺服器錯誤');
+    if (d.ok === false) throw new Error('Apps Script 回報錯誤：'+(d.error||'伺服器錯誤')+'\n\n請確認貼入的程式碼與本頁提供的一致。');
     setGsSyncStatus('ok', '上傳成功 ' + new Date().toLocaleTimeString('zh-TW'));
   } catch (e) {
-    setGsSyncStatus('err', '上傳失敗：' + e.message);
-    alert('Google Sheets 上傳失敗：\n' + e.message + '\n\n請確認 Web App URL 正確，且部署時存取權設為「所有人」。');
+    setGsSyncStatus('err', '上傳失敗（點「上傳至 Sheets」重試）');
+    alert('Google Sheets 上傳失敗\n\n' + gsErrorHint(e, e.httpStatus));
   }
 });
 document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
@@ -991,10 +1033,10 @@ document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
   setGsSyncStatus('loading', '下載中…');
   try {
     const res = await fetch(url, { redirect: 'follow' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    let rec; try { rec = JSON.parse(await res.text()); } catch { throw new Error('回傳格式不正確'); }
-    if (rec.error) throw new Error(rec.error);
-    if (!Array.isArray(rec.rows)) throw new Error('資料格式不正確（缺少 rows）');
+    if (!res.ok) { const err=new Error('HTTP '+res.status); err.httpStatus=res.status; throw err; }
+    let rec; try { rec = JSON.parse(await res.text()); } catch { throw new Error('回傳的不是有效資料。可能是 Web App URL 貼錯（回傳了網頁而非資料），或 Apps Script 程式碼不正確。'); }
+    if (rec.error) throw new Error('Apps Script 回報錯誤：'+rec.error);
+    if (!Array.isArray(rec.rows)) throw new Error('雲端還沒有資料，或資料格式不正確（缺少 rows）。請先按「上傳至 Sheets」建立一次資料。');
     if (!confirm(`下載後將覆蓋目前資料（${rec.rows.length} 筆）。確定繼續？`)) { setGsSyncStatus('idle','已取消'); return; }
     rows = mergeLocalImages(rec.rows,rows); budget = parseFloat(rec.budget) || 500000;
     if (Array.isArray(rec.wishes)) wishes = mergeLocalImages(rec.wishes,wishes);
@@ -1005,8 +1047,8 @@ document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
     buildPurchaseTable(); persistPurchases();
     setGsSyncStatus('ok', '下載成功 ' + new Date().toLocaleTimeString('zh-TW'));
   } catch (e) {
-    setGsSyncStatus('err', '下載失敗：' + e.message);
-    alert('Google Sheets 下載失敗：\n' + e.message);
+    setGsSyncStatus('err', '下載失敗（點「從 Sheets 下載」重試）');
+    alert('Google Sheets 下載失敗\n\n' + gsErrorHint(e, e.httpStatus));
   }
 });
 document.getElementById('gsCopyUrlBtn').addEventListener('click', () => {
