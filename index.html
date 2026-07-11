@@ -125,6 +125,7 @@
   .td-input:focus { background:var(--bg2); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--teal) 35%, transparent); }
   .td-input::placeholder { color:var(--text3); }
   .td-input[type="number"] { text-align:right; }
+  .td-input.calc-input { text-align:right; }
   .td-input[type="number"]::-webkit-inner-spin-button,
   .td-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; }
   .subtotal-cell { padding:9px 12px; font-size:14px; font-weight:600; color:var(--text); text-align:right; white-space:nowrap; }
@@ -357,7 +358,7 @@ function doPost(e) {
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
       預算上限
     </label>
-    <input type="number" id="budgetInput" class="budget-input" value="500000" />
+    <input type="text" inputmode="text" id="budgetInput" class="budget-input calc-input" title="可輸入算式，例如 400000+50000，按 Enter 或點到別處即算出" value="500000" />
     <span style="font-size:13px;color:var(--text2);">元</span>
     <span class="save-hint" id="saveHint">已儲存 ✓</span>
   </div>
@@ -585,7 +586,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.2';
+const APP_VERSION = 'v2.3';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -594,6 +595,40 @@ let rows = [], budget = 500000, saveTimer = null;
 const fmt    = n => 'NT$' + Math.round(n).toLocaleString('zh-TW');
 const uid    = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+/* ── 金額欄位算式計算：輸入 8000+3216 按 Enter/離開即算出總金額 ── */
+function evalMathExpr(raw){
+  if(raw==null) return null;
+  let s=String(raw).trim();
+  if(!s) return null;
+  s=s.replace(/=+\s*$/,'');                       /* 去掉結尾的 = */
+  s=s.replace(/[×xX＊*]/g,'*').replace(/[÷／]/g,'/'); /* 正規化乘除符號 */
+  s=s.replace(/[，,\s]/g,'');                      /* 移除千分位逗號與空白 */
+  if(/^[0-9.]*$/.test(s)) return null;             /* 純數字或空字串：不需計算 */
+  if(!/^[0-9.+\-*/()]+$/.test(s)) return null;     /* 含非允許字元：視為無效 */
+  try {
+    const v = Function('"use strict";return('+s+')')();
+    if(typeof v==='number' && isFinite(v)) return v;
+  } catch(e){}
+  return null;
+}
+/* 對某個欄位套用計算；若確有計算則更新值並觸發 input 事件，回傳是否有計算 */
+function applyCalcToField(el){
+  if(!el || !el.classList || !el.classList.contains('calc-input')) return false;
+  const result = evalMathExpr(el.value);
+  if(result===null) return false;
+  const rounded = Math.round(result*100)/100;      /* 最多兩位小數，避免浮點誤差 */
+  el.value = String(rounded);
+  el.dispatchEvent(new Event('input',{bubbles:true})); /* 讓既有的即時計算/儲存邏輯接手 */
+  return true;
+}
+document.addEventListener('focusout', e=>{ applyCalcToField(e.target); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target && e.target.classList && e.target.classList.contains('calc-input')){
+    if(applyCalcToField(e.target)) e.preventDefault();
+    e.target.blur();
+  }
+});
 const newRow = () => ({ id:uid(), name:'', qty:1, price:'', annualCost:'', srcLabel:'', srcUrl:'', imgData:'' });
 
 function persist() {
@@ -734,9 +769,9 @@ function buildTable() {
           <button class="qty-btn" data-id="${row.id}" data-action="plus">+</button>
         </div>
       </td>
-      <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="price" value="${esc(row.price)}" /></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-id="${row.id}" data-field="price" value="${esc(row.price)}" /></td>
       <td><div class="subtotal-cell" data-id="${row.id}">${sub>0?fmt(sub):'—'}</div></td>
-      <td><input class="td-input" type="number" min="0" step="1" placeholder="0" data-id="${row.id}" data-field="annualCost" value="${esc(row.annualCost)}" style="color:var(--amber);" /></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-id="${row.id}" data-field="annualCost" value="${esc(row.annualCost)}" style="color:var(--amber);" /></td>
       <td style="min-width:180px;"><div class="src-wrap">
         <input class="td-input" placeholder="來源名稱" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
         <input class="td-input" placeholder="https://…（選填）" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
@@ -1194,9 +1229,9 @@ function buildWishTable(){
           <button class="wish-qty-btn" data-wid="${w.id}" data-action="plus">+</button>
         </div>
       </td>
-      <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="price" value="${esc(w.price)}" /></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-wid="${w.id}" data-wf="price" value="${esc(w.price)}" /></td>
       <td><div class="subtotal-cell" data-wid="${w.id}">${sub>0?fmt(sub):'—'}</div></td>
-      <td><input class="td-input" type="number" min="0" placeholder="0" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></td>
       <td><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></td>
       <td style="min-width:180px;"><div class="src-wrap">
         <input class="td-input" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
@@ -1370,9 +1405,9 @@ function buildPurchaseTable(){
           <button class="purchase-qty-btn" data-pid="${p.id}" data-action="plus">+</button>
         </div>
       </td>
-      <td><input class="td-input" type="number" min="0" placeholder="0" data-pid="${p.id}" data-pf="price" value="${esc(p.price)}" /></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="price" value="${esc(p.price)}" /></td>
       <td><div class="subtotal-cell" data-pid="${p.id}">${sub>0?fmt(sub):'—'}</div></td>
-      <td><input class="td-input" type="number" min="0" placeholder="0" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
       <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep>0?fmt(remain):'—'}</div></td>
       <td><input class="td-input" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
       <td><button class="del-btn" data-pid="${p.id}" title="刪除">${DSVG}</button></td>`;
