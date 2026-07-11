@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>電器採購成本統計表</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -586,7 +589,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.3';
+const APP_VERSION = 'v2.4';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -987,7 +990,7 @@ document.getElementById('uploadBtn').addEventListener('click', async ()=>{
       let d={}; try{ d=await res.json(); }catch(_){}
       if(!res.ok) throw new Error(jsonbinErrorHint(res.status, d.message));
     }
-    setSyncStatus('ok','上傳成功 '+new Date().toLocaleTimeString('zh-TW'));
+    setSyncStatus('ok','上傳成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
   } catch(e){
     const msg=friendlyNetworkError(e);
     setSyncStatus('err','上傳失敗（點「上傳」重試）');
@@ -1013,7 +1016,8 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
     buildPurchaseTable(); persistPurchases();
-    setSyncStatus('ok','下載成功 '+new Date().toLocaleTimeString('zh-TW'));
+    setSyncStatus('ok','下載成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
+    if(!Array.isArray(rec.purchases)) alert('提醒：這次下載的雲端資料裡沒有「已購買清單」。\n\n代表上次「上傳」的裝置是舊版本（已購清單是新功能）。請在有已購清單的裝置上重新整理頁面到最新版後，再按一次「上傳」。');
   } catch(e){
     const msg=friendlyNetworkError(e);
     setSyncStatus('err','下載失敗（點「下載」重試）');
@@ -1067,7 +1071,7 @@ document.getElementById('gsUploadBtn').addEventListener('click', async () => {
     const text = await res.text();
     let d; try { d = JSON.parse(text); } catch { d = {}; }
     if (d.ok === false) throw new Error('Apps Script 回報錯誤：'+(d.error||'伺服器錯誤')+'\n\n請確認貼入的程式碼與本頁提供的一致。');
-    setGsSyncStatus('ok', '上傳成功 ' + new Date().toLocaleTimeString('zh-TW'));
+    setGsSyncStatus('ok', '上傳成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
   } catch (e) {
     setGsSyncStatus('err', '上傳失敗（點「上傳至 Sheets」重試）');
     alert('Google Sheets 上傳失敗\n\n' + gsErrorHint(e, e.httpStatus));
@@ -1090,7 +1094,8 @@ document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
     buildPurchaseTable(); persistPurchases();
-    setGsSyncStatus('ok', '下載成功 ' + new Date().toLocaleTimeString('zh-TW'));
+    setGsSyncStatus('ok', '下載成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
+    if(!Array.isArray(rec.purchases)) alert('提醒：這次下載的雲端資料裡沒有「已購買清單」。\n\n代表上次「上傳至 Sheets」的裝置是舊版本（已購清單是新功能）。請在有已購清單的裝置上重新整理頁面到最新版後，再按一次「上傳至 Sheets」。');
   } catch (e) {
     setGsSyncStatus('err', '下載失敗（點「從 Sheets 下載」重試）');
     alert('Google Sheets 下載失敗\n\n' + gsErrorHint(e, e.httpStatus));
@@ -1165,7 +1170,7 @@ document.getElementById('importConfirmBtn').addEventListener('click',()=>{
   buildWishTable(); persistWishes();
   buildPurchaseTable(); persistPurchases();
   document.getElementById('importModal').classList.remove('open');
-  alert('匯入成功！共 '+rows.length+' 筆採購資料，'+wishes.length+' 筆許願資料。');
+  alert('匯入成功！\n採購 '+rows.length+' 筆、許願 '+wishes.length+' 筆、已購買清單 '+purchases.length+' 筆。'+(purchases.length?'':'\n\n（這個檔案裡沒有已購買清單，可能是舊版本匯出的檔案）'));
 });
 document.getElementById('fileInput').addEventListener('change',e=>readJsonFile(e.target.files[0]));
 const fd=document.getElementById('fileDrop');
