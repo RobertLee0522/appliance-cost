@@ -23,6 +23,7 @@
     --shadow-lg:0 18px 50px -18px rgba(20,20,15,0.3);
     --ring:0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
     --nav-h:50px;
+    --sel-arrow:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230E6B54' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
   @media(prefers-color-scheme:dark){:root{
     --bg:#1f1f1e; --bg2:#282826; --bg3:#33332f;
@@ -35,6 +36,7 @@
     --shadow-sm:0 1px 2px rgba(0,0,0,0.3);
     --shadow:0 1px 2px rgba(0,0,0,0.3), 0 10px 26px -16px rgba(0,0,0,0.6);
     --shadow-lg:0 18px 50px -18px rgba(0,0,0,0.7);
+    --sel-arrow:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2363DFB9' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }}
   html { scrollbar-color: var(--border2) transparent; scroll-behavior:smooth; }
   body {
@@ -204,13 +206,29 @@
   .img-remove-btn:hover { background:#8a2424; }
   .src-thumb:hover { transform:scale(1.05); }
   .del-btn { background:none; border:none; cursor:pointer; color:var(--text3); padding:8px 9px; line-height:1; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; transition:color .15s,background .15s; vertical-align:middle; }
-  .row-actions { display:flex; align-items:center; justify-content:flex-end; gap:2px; padding-right:6px; }
+  .row-actions { display:flex; align-items:center; justify-content:flex-end; gap:4px; padding:4px 8px 4px 0; }
   .del-btn:hover { color:var(--red); background:var(--red-light); }
   tfoot td { background:var(--bg2); border-top:0.5px solid var(--border); }
   .tf-label { padding:11px 12px; font-size:12px; font-weight:600; color:var(--text2); }
   .tf-total { padding:11px 12px; font-size:16px; font-weight:700; color:var(--text); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
 
   .bottom-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .move-select {
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    font-family:inherit; font-size:11.5px; font-weight:500; line-height:1.4;
+    color:var(--teal-dark); background-color:var(--teal-light);
+    border:0.5px solid color-mix(in srgb, var(--teal) 32%, transparent); border-radius:999px;
+    padding:4px 21px 4px 10px; cursor:pointer; max-width:82px;
+    background-image:var(--sel-arrow);
+    background-repeat:no-repeat; background-position:right 7px center;
+    transition:background-color .15s;
+  }
+  .move-select:hover { background-color:color-mix(in srgb, var(--teal) 18%, var(--teal-light)); }
+  .move-select option { color:var(--text); background:var(--bg); font-size:13px; }
+  .toast { position:fixed; left:50%; bottom:22px; z-index:200; transform:translate(-50%,14px); max-width:90vw; text-align:center;
+    background:var(--text); color:var(--bg); font-size:13px; font-weight:500; padding:10px 18px; border-radius:999px;
+    box-shadow:var(--shadow-lg); opacity:0; pointer-events:none; transition:opacity .2s,transform .2s; }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
   .extra-tag { display:inline-block; margin:0 12px 7px; font-size:10.5px; font-weight:600; color:var(--amber-dark); background:var(--amber-light); border:0.5px solid color-mix(in srgb, var(--amber) 30%, transparent); border-radius:999px; padding:2px 8px; cursor:help; }
   .extra-tag.hide { display:none; }
 
@@ -544,7 +562,7 @@
           <th style="width:110px;text-align:right;">採購小計</th>
           <th style="width:120px;text-align:right;">每年花費（元）</th>
           <th style="min-width:180px;">來源 / 網址</th>
-          <th style="width:104px;"></th>
+          <th style="width:128px;"></th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -595,7 +613,7 @@
       </div>
     </div>
     <div class="table-card table-inner">
-      <table style="min-width:1020px;">
+      <table style="min-width:1080px;">
         <thead>
           <tr>
             <th style="width:36px;">#</th>
@@ -608,7 +626,7 @@
             <th style="width:80px;text-align:center;">優先度</th>
             <th style="min-width:180px;">來源 / 網址</th>
             <th style="min-width:100px;">備註</th>
-            <th style="width:84px;"></th>
+            <th style="width:128px;"></th>
           </tr>
         </thead>
         <tbody id="wishBody"></tbody>
@@ -633,7 +651,7 @@
             已購買清單
             <span class="chip teal">訂金／尾款追蹤</span>
           </div>
-          <div class="sect-sub">記錄已下訂或已購買的項目。可從上方採購表按「✅」自動帶入，不用重打。<span id="purchaseExtraNote"></span></div>
+          <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。<span id="purchaseExtraNote"></span></div>
         </div>
       </div>
       <div class="sect-actions">
@@ -656,7 +674,7 @@
       </div>
     </div>
     <div class="table-card table-inner">
-      <table style="min-width:860px;">
+      <table style="min-width:950px;">
         <thead>
           <tr>
             <th style="width:36px;">#</th>
@@ -667,7 +685,7 @@
             <th style="width:120px;text-align:right;">已付訂金（元）</th>
             <th style="width:120px;text-align:right;">剩餘尾款</th>
             <th style="min-width:100px;">備註</th>
-            <th style="width:40px;"></th>
+            <th style="width:128px;"></th>
           </tr>
         </thead>
         <tbody id="purchaseBody"></tbody>
@@ -793,6 +811,8 @@ function doPost(e) {
 
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <button type="button" class="to-top" id="toTopBtn" title="回到頂端" aria-label="回到頂端">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
 </button>
@@ -825,7 +845,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.8';
+const APP_VERSION = 'v2.9';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1019,8 +1039,20 @@ const LSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke
 const srcThumbHtml = url => url ? `<img class="src-thumb" src="${esc(url)}" alt="來源圖片" loading="lazy" onerror="this.remove()" />` : '';
 const DSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
 
-const MOVE_DOWN_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>`;
-const MOVE_UP_SVG   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 14 12 9 7 14"/><line x1="12" y1="21" x2="12" y2="9"/><rect x="3" y="3" width="18" height="4" rx="1"/></svg>`;
+/* ══ 每一列的「移至…」下拉：統一各表之間的搬移方式 ══
+   （移動）＝ 從原本的清單移除；（帶入）＝ 原本那列保留 */
+const MOVE_TARGETS = {
+  row:      [['wish','→ 許願表（移動）'],      ['purchase','→ 已購買清單（帶入）'], ['compare','→ 比價表（帶入）']],
+  wish:     [['row','→ 採購表（移動）'],       ['purchase','→ 已購買清單（帶入）'], ['compare','→ 比價表（帶入）']],
+  purchase: [['row','→ 採購表（帶入）'],       ['wish','→ 許願表（移動）']],
+  cmp:      [['row','→ 採購表（帶入）'],       ['wish','→ 許願表（帶入）'],         ['purchase','→ 已購買清單（帶入）']]
+};
+function moveSelectHtml(kind, attrs){
+  return `<select class="move-select" data-move="${kind}" ${attrs} title="把這一列移動或帶入到其他清單">`
+    + `<option value="">移至…</option>`
+    + MOVE_TARGETS[kind].map(([v,l])=>`<option value="${v}">${l}</option>`).join('')
+    + `</select>`;
+}
 
 function buildTable() {
   const tbody=document.getElementById('tableBody');
@@ -1054,8 +1086,7 @@ function buildTable() {
         ${row.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${row.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-id="${row.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(row.srcUrl)}
       </div></td>
       <td><div class="row-actions">
-        <button class="del-btn copy-purchase-btn" data-id="${row.id}" title="帶入已購買清單（記錄訂金/尾款）" style="color:var(--amber);font-size:13px;line-height:1;">✅</button>
-        <button class="del-btn move-wish-btn" data-id="${row.id}" title="移至許願表" style="color:var(--teal);">${MOVE_DOWN_SVG}</button>
+        ${moveSelectHtml('row','data-id="'+row.id+'"')}
         <button class="del-btn" data-id="${row.id}" title="刪除">${DSVG}</button>
       </div></td>`;
     tbody.appendChild(tr);
@@ -1106,25 +1137,6 @@ tbody.addEventListener('click',e=>{
     findImageFileFromClipboard().then(readImageAsDataUrl).then(dataUrl=>{ r.imgData=dataUrl; buildTable(); updateTotals(); persist(); })
       .catch(err=>alert(err.message));
     return;
-  }
-  /* 帶入已購買清單（複製，不移除原列） */
-  const copyPurchaseBtn=e.target.closest('.copy-purchase-btn');
-  if(copyPurchaseBtn){
-    const row=rows.find(r=>r.id===copyPurchaseBtn.dataset.id); if(!row)return;
-    purchases.push({ id:uid(), fromId:row.id, name:row.name, qty:row.qty||1, price:row.price, deposit:'', note:'' });
-    buildPurchaseTable(); persistPurchases();
-    const tas=document.querySelectorAll('#purchaseBody input[data-pf="deposit"]');
-    if(tas.length){ tas[tas.length-1].focus(); tas[tas.length-1].scrollIntoView({block:'center',behavior:'smooth'}); }
-    return;
-  }
-  /* 移至許願表 */
-  const moveBtn=e.target.closest('.move-wish-btn');
-  if(moveBtn){
-    const row=rows.find(r=>r.id===moveBtn.dataset.id); if(!row)return;
-    wishes.push({id:uid(),name:row.name,category:'家電',qty:row.qty||1,price:row.price,annualCost:row.annualCost,srcLabel:row.srcLabel,srcUrl:row.srcUrl,imgData:row.imgData,priority:'★★★',note:''});
-    rows=rows.filter(r=>r.id!==moveBtn.dataset.id);
-    buildTable(); updateTotals(); persist();
-    buildWishTable(); persistWishes(); return;
   }
   /* 刪除 */
   const btn=e.target.closest('.del-btn'); if(!btn||!btn.dataset.id)return;
@@ -1537,7 +1549,7 @@ function buildWishTable(){
       </div></td>
       <td><input class="td-input" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
       <td><div class="row-actions">
-        <button class="del-btn move-main-btn" data-wid="${w.id}" title="移至採購表" style="color:var(--teal);">${MOVE_UP_SVG}</button>
+        ${moveSelectHtml('wish','data-wid="'+w.id+'"')}
         <button class="del-btn" data-wid="${w.id}" title="刪除">${DSVG}</button>
       </div></td>`;
     tbody.appendChild(tr);
@@ -1626,15 +1638,6 @@ wishBody.addEventListener('click',e=>{
     findImageFileFromClipboard().then(readImageAsDataUrl).then(dataUrl=>{ w.imgData=dataUrl; buildWishTable(); persistWishes(); })
       .catch(err=>alert(err.message));
     return;
-  }
-  /* 移至採購表 */
-  const moveBtn=e.target.closest('.move-main-btn');
-  if(moveBtn){
-    const w=wishes.find(x=>x.id===moveBtn.dataset.wid); if(!w)return;
-    rows.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, annualCost:w.annualCost, srcLabel:w.srcLabel, srcUrl:w.srcUrl, imgData:w.imgData });
-    wishes=wishes.filter(x=>x.id!==moveBtn.dataset.wid);
-    buildTable(); updateTotals(); persist();
-    buildWishTable(); persistWishes(); return;
   }
   /* 刪除 */
   const btn=e.target.closest('.del-btn'); if(!btn||!btn.dataset.wid)return;
@@ -1806,7 +1809,10 @@ function buildPurchaseTable(){
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
       <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep>0?fmt(remain):'—'}</div></td>
       <td><input class="td-input" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
-      <td><div class="row-actions"><button class="del-btn" data-pid="${p.id}" title="刪除">${DSVG}</button></div></td>`;
+      <td><div class="row-actions">
+        ${moveSelectHtml('purchase','data-pid="'+p.id+'"')}
+        <button class="del-btn" data-pid="${p.id}" title="刪除">${DSVG}</button>
+      </div></td>`;
     tbody.appendChild(tr);
     const ta=tr.querySelector('.name-ta');
     ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
@@ -1922,6 +1928,7 @@ function cmpItemHtml(c,it){
           <label class="img-upload-btn">📷 照片<input type="file" accept="image/*" class="cmp-img-input" data-cid="${c.id}" data-iid="${it.id}" hidden /></label>
           <button type="button" class="img-upload-btn img-paste-btn cmp-paste-btn" data-cid="${c.id}" data-iid="${it.id}" title="從剪貼簿貼上圖片">📋 貼上</button>
           <button type="button" class="img-upload-btn cmp-url-btn" data-cid="${c.id}" data-iid="${it.id}" title="填寫商品連結">🔗 連結</button>
+          ${moveSelectHtml('cmp','data-cid="'+c.id+'" data-iid="'+it.id+'"')}
         </div>
         <input class="cmp-sub cmp-url-inp" placeholder="https://…（選填）" data-cid="${c.id}" data-iid="${it.id}" data-if="url" value="${esc(it.url)}" />
         ${cmpMediaHtml(c,it)}
@@ -2129,6 +2136,130 @@ document.getElementById('addCompareBtn').addEventListener('click',()=>{
   buildCompare(); persistCompares();
   const el=document.querySelector('.cmp-group[data-cid="'+c.id+'"] .cmp-title-input');
   if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); el.focus(); }
+});
+
+/* ══ 「移至…」下拉的實際搬移邏輯 ══ */
+let toastTimer=null;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
+}
+function focusLastDeposit(){
+  const list=document.querySelectorAll('#purchaseBody input[data-pf="deposit"]');
+  if(!list.length) return;
+  const el=list[list.length-1];
+  el.scrollIntoView({block:'center',behavior:'smooth'}); el.focus();
+}
+/* 用一筆資料在比價表開一組新的比價（第一家先填好，另外留一列空的可以比） */
+function addCompareFrom(title, store, price, url, imgData){
+  const g={ id:uid(), title:title||'', items:[
+    { id:uid(), store:store||'', price:price||'', note:'', url:url||'', imgData:imgData||'' },
+    newCompareItem()
+  ]};
+  compares.push(g); buildCompare(); persistCompares();
+  const el=document.querySelector('.cmp-group[data-cid="'+g.id+'"]');
+  if(el) el.scrollIntoView({block:'center',behavior:'smooth'});
+}
+const TARGET_NAME = { row:'採購表', wish:'許願表', purchase:'已購買清單', compare:'比價表' };
+
+function handleMove(kind, ds, target){
+  if(kind==='row'){
+    const i=rows.findIndex(r=>r.id===ds.id); if(i<0) return;
+    const r=rows[i];
+    if(target==='wish'){
+      wishes.push({ id:uid(), name:r.name, category:'家電', qty:r.qty||1, price:r.price, annualCost:r.annualCost,
+                    srcLabel:r.srcLabel, srcUrl:r.srcUrl, imgData:r.imgData, priority:'★★★', note:'' });
+      rows.splice(i,1);
+      buildTable(); updateTotals(); persist(); buildWishTable(); persistWishes();
+      toast('已移至許願表');
+    } else if(target==='purchase'){
+      purchases.push({ id:uid(), fromId:r.id, name:r.name, qty:r.qty||1, price:r.price, deposit:'', note:'' });
+      buildPurchaseTable(); persistPurchases();
+      focusLastDeposit();
+      toast('已帶入已購買清單，請填入已付訂金');
+    } else if(target==='compare'){
+      addCompareFrom(r.name, r.srcLabel, r.price, r.srcUrl, r.imgData);
+      toast('已帶入比價表，可以再加別家比價');
+    }
+    return;
+  }
+
+  if(kind==='wish'){
+    const i=wishes.findIndex(w=>w.id===ds.wid); if(i<0) return;
+    const w=wishes[i];
+    if(target==='row'){
+      rows.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, annualCost:w.annualCost,
+                  srcLabel:w.srcLabel, srcUrl:w.srcUrl, imgData:w.imgData });
+      wishes.splice(i,1);
+      buildTable(); updateTotals(); persist(); buildWishTable(); persistWishes();
+      toast('已移至採購表');
+    } else if(target==='purchase'){
+      purchases.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, deposit:'', note:w.note||'' });
+      buildPurchaseTable(); persistPurchases();
+      focusLastDeposit();
+      toast('已帶入已購買清單，請填入已付訂金');
+    } else if(target==='compare'){
+      addCompareFrom(w.name, w.srcLabel, w.price, w.srcUrl, w.imgData);
+      toast('已帶入比價表，可以再加別家比價');
+    }
+    return;
+  }
+
+  if(kind==='purchase'){
+    const i=purchases.findIndex(p=>p.id===ds.pid); if(i<0) return;
+    const p=purchases[i];
+    if(target==='row'){
+      const nid=uid();
+      rows.push({ id:nid, name:p.name, qty:p.qty||1, price:p.price, annualCost:'', srcLabel:'', srcUrl:'', imgData:'' });
+      p.fromId=nid;                       /* 建立對應，這筆就不再算「採購表外」 */
+      buildTable(); updateTotals(); persist();
+      buildPurchaseTable(); persistPurchases();
+      toast('已帶入採購表，兩邊已對應起來');
+    } else if(target==='wish'){
+      wishes.push({ id:uid(), name:p.name, category:'家電', qty:p.qty||1, price:p.price, annualCost:'',
+                    srcLabel:'', srcUrl:'', imgData:'', priority:'★★★', note:p.note||'' });
+      purchases.splice(i,1);
+      buildWishTable(); persistWishes();
+      buildPurchaseTable(); persistPurchases();
+      toast('已移至許願表（付款紀錄一併移除）');
+    }
+    return;
+  }
+
+  if(kind==='cmp'){
+    const c=findCmpGroup(ds.cid), it=findCmpItem(ds.cid,ds.iid); if(!c||!it) return;
+    const name  = c.title || it.store || '';
+    const label = it.store || '';
+    const note  = [it.store, it.note].filter(Boolean).join('／');
+    if(target==='row'){
+      rows.push({ id:uid(), name, qty:1, price:it.price, annualCost:'', srcLabel:label, srcUrl:it.url, imgData:it.imgData });
+      buildTable(); updateTotals(); persist();
+      toast('已帶入採購表');
+    } else if(target==='wish'){
+      wishes.push({ id:uid(), name, category:'家電', qty:1, price:it.price, annualCost:'',
+                    srcLabel:label, srcUrl:it.url, imgData:it.imgData, priority:'★★★', note:'' });
+      buildWishTable(); persistWishes();
+      toast('已帶入許願表');
+    } else if(target==='purchase'){
+      purchases.push({ id:uid(), name, qty:1, price:it.price, deposit:'', note });
+      buildPurchaseTable(); persistPurchases();
+      focusLastDeposit();
+      toast('已帶入已購買清單，請填入已付訂金');
+    }
+    return;
+  }
+}
+
+/* 各表的 change 事件只認自己的欄位，這裡統一接手「移至…」下拉 */
+document.addEventListener('change', e=>{
+  const sel = e.target && e.target.closest && e.target.closest('.move-select');
+  if(!sel) return;
+  const target=sel.value;
+  sel.value='';                            /* 動作完就回到「移至…」 */
+  if(!target) return;
+  handleMove(sel.dataset.move, sel.dataset, target);
 });
 
 /* ══ 區塊快速導覽 + 回頂端 ══ */
