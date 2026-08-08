@@ -589,13 +589,13 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.4';
+const APP_VERSION = 'v2.5';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
 let rows = [], budget = 500000, saveTimer = null;
 
-const fmt    = n => 'NT$' + Math.round(n).toLocaleString('zh-TW');
+const fmt    = n => (n<0?'-':'') + 'NT$' + Math.round(Math.abs(n)).toLocaleString('zh-TW');
 const uid    = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
@@ -625,10 +625,37 @@ function applyCalcToField(el){
   el.dispatchEvent(new Event('input',{bubbles:true})); /* 讓既有的即時計算/儲存邏輯接手 */
   return true;
 }
-document.addEventListener('focusout', e=>{ applyCalcToField(e.target); });
+/* 無效輸入時閃紅提示 */
+function flashInvalidField(el){
+  const old = el.style.backgroundColor;
+  el.style.backgroundColor = 'var(--red-light)';
+  setTimeout(()=>{ el.style.backgroundColor = old || ''; }, 700);
+}
+/* 正規化金額欄位：算式→算出結果；純數字（可含千分位逗號）→ 去掉逗號；
+   其餘無效輸入 → 還原為進入欄位前的值。
+   若不正規化，像「1,000」這種輸入會被 parseFloat 解析成 1，造成金額被靜默算錯。 */
+function normalizeMoneyField(el){
+  if(!el || !el.classList || !el.classList.contains('calc-input')) return false;
+  const setVal = v => { el.value = v; el.dispatchEvent(new Event('input',{bubbles:true})); return true; };
+  const raw = String(el.value==null ? '' : el.value).trim();
+  if(raw === '') return el.value === '' ? false : setVal('');
+  const calc = evalMathExpr(raw);
+  if(calc !== null) return setVal(String(Math.round(calc*100)/100));
+  const cleaned = raw.replace(/[，,\s]/g,'');
+  if(/^-?(\d+\.?\d*|\.\d+)$/.test(cleaned)) return cleaned === el.value ? false : setVal(cleaned);
+  /* 無法解析（例如 abc、5/0）：還原舊值，避免顯示與實際計算不一致 */
+  flashInvalidField(el);
+  return setVal(el.dataset.prevValue !== undefined ? el.dataset.prevValue : '');
+}
+/* 進入欄位時記住原值，供無效輸入時還原 */
+document.addEventListener('focusin', e=>{
+  const el=e.target;
+  if(el && el.classList && el.classList.contains('calc-input')) el.dataset.prevValue = el.value;
+});
+document.addEventListener('focusout', e=>{ normalizeMoneyField(e.target); });
 document.addEventListener('keydown', e=>{
   if(e.key==='Enter' && e.target && e.target.classList && e.target.classList.contains('calc-input')){
-    if(applyCalcToField(e.target)) e.preventDefault();
+    if(normalizeMoneyField(e.target)) e.preventDefault();
     e.target.blur();
   }
 });
@@ -907,8 +934,10 @@ document.getElementById('addBtn').addEventListener('click',()=>{
   if(all.length) all[all.length-1].focus();
 });
 document.getElementById('clearBtn').addEventListener('click',()=>{
-  if(!confirm('確定要清空所有資料嗎？\n此動作無法復原。'))return;
+  if(!confirm('確定要清空所有資料嗎？\n採購表、許願表、已購買清單都會被清空。\n此動作無法復原。'))return;
   rows=[newRow(),newRow(),newRow()]; buildTable(); updateTotals(); persist();
+  wishes=[newWish()]; buildWishTable(); persistWishes();
+  purchases=[]; buildPurchaseTable(); persistPurchases();
 });
 document.getElementById('budgetInput').addEventListener('input',e=>{
   budget=parseFloat(e.target.value)||0; updateTotals(); persist();
