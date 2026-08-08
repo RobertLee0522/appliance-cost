@@ -10,102 +10,157 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg:#ffffff; --bg2:#f5f5f3; --bg3:#eeecea;
-    --text:#1a1a18; --text2:#6b6b67; --text3:#9b9b96;
-    --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.16);
-    --teal:#17A277; --teal2:#0DBE8B; --teal-light:#E1F5EE; --teal-dark:#0F6E56;
-    --amber:#BA7517; --amber-light:#FBEFDC; --red:#A32D2D; --red-light:#FCEBEB;
-    --radius:10px; --radius-lg:16px;
-    --shadow-sm:0 1px 2px rgba(20,20,15,0.04);
-    --shadow:0 2px 6px rgba(20,20,15,0.05), 0 10px 28px -14px rgba(20,20,15,0.14);
-    --shadow-lg:0 16px 48px -16px rgba(20,20,15,0.28);
+    --bg:#ffffff; --bg2:#f6f5f3; --bg3:#eceae6;
+    --text:#191917; --text2:#6b6b66; --text3:#9d9d96;
+    --border:rgba(20,20,15,0.09); --border2:rgba(20,20,15,0.17);
+    --teal:#16A07A; --teal2:#0FBE8C; --teal-light:#E3F5EE; --teal-dark:#0E6B54;
+    --amber:#B87514; --amber-light:#FBEFDB; --amber-dark:#8A5709;
+    --red:#A32D2D; --red-light:#FCEBEB;
+    --indigo:#5A5FD0; --indigo-light:#ECECFB; --indigo-dark:#3D42A6;
+    --radius-sm:8px; --radius:11px; --radius-lg:16px;
+    --shadow-sm:0 1px 2px rgba(20,20,15,0.05);
+    --shadow:0 1px 2px rgba(20,20,15,0.04), 0 10px 26px -16px rgba(20,20,15,0.16);
+    --shadow-lg:0 18px 50px -18px rgba(20,20,15,0.3);
+    --ring:0 0 0 3px color-mix(in srgb, var(--teal) 18%, transparent);
+    --nav-h:50px;
   }
   @media(prefers-color-scheme:dark){:root{
-    --bg:#212120; --bg2:#2a2a28; --bg3:#343430;
-    --text:#f0ede8; --text2:#a0a09a; --text3:#6a6a65;
-    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.16);
-    --teal-light:#0d3f30; --amber-light:#3a2c14; --red-light:#3a1c1c;
-    --shadow-sm:0 1px 2px rgba(0,0,0,0.25);
-    --shadow:0 2px 6px rgba(0,0,0,0.3), 0 10px 28px -14px rgba(0,0,0,0.5);
-    --shadow-lg:0 16px 48px -16px rgba(0,0,0,0.6);
+    --bg:#1f1f1e; --bg2:#282826; --bg3:#33332f;
+    --text:#f1eee9; --text2:#a3a39c; --text3:#6e6e68;
+    --border:rgba(255,255,255,0.09); --border2:rgba(255,255,255,0.17);
+    --teal:#1CB88C; --teal2:#22D3A0; --teal-light:#0e4033; --teal-dark:#63DFB9;
+    --amber:#D9963C; --amber-light:#3b2d15; --amber-dark:#F0B662;
+    --red:#E07070; --red-light:#3a1c1c;
+    --indigo:#8C90E8; --indigo-light:#25254a; --indigo-dark:#AAADF2;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.3);
+    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 10px 26px -16px rgba(0,0,0,0.6);
+    --shadow-lg:0 18px 50px -18px rgba(0,0,0,0.7);
   }}
-  html { scrollbar-color: var(--border2) transparent; }
+  html { scrollbar-color: var(--border2) transparent; scroll-behavior:smooth; }
   body {
-    font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif; color:var(--text); min-height:100vh; padding:2rem 1rem 3rem;
+    font-family:-apple-system,BlinkMacSystemFont,'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;
+    color:var(--text); min-height:100vh; padding:1.75rem 1rem 4rem; line-height:1.45;
     background:
-      radial-gradient(760px 340px at 12% -6%, color-mix(in srgb, var(--teal) 12%, transparent), transparent 65%),
-      radial-gradient(640px 320px at 100% 0%, color-mix(in srgb, var(--amber) 10%, transparent), transparent 60%),
+      radial-gradient(780px 340px at 10% -8%, color-mix(in srgb, var(--teal) 11%, transparent), transparent 62%),
+      radial-gradient(660px 320px at 100% 2%, color-mix(in srgb, var(--amber) 9%, transparent), transparent 58%),
       var(--bg2);
-    -webkit-font-smoothing:antialiased;
+    -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
   }
   .wrap { max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
   .card { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); }
+  .money { font-variant-numeric:tabular-nums; font-feature-settings:'tnum' 1; }
+  :focus-visible { outline:2px solid var(--teal); outline-offset:2px; }
 
-  .btn { display:inline-flex; align-items:center; gap:5px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text2); font-size:12px; font-family:inherit; padding:7px 13px; cursor:pointer; transition:background .15s,color .15s,box-shadow .15s,transform .1s,border-color .15s; white-space:nowrap; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:5px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text2); font-size:12px; font-weight:500; font-family:inherit; padding:7px 13px; cursor:pointer; transition:background .15s,color .15s,box-shadow .15s,transform .1s,border-color .15s; white-space:nowrap; min-height:32px; }
   .btn:hover { background:var(--bg2); color:var(--text); box-shadow:var(--shadow-sm); }
   .btn:active { transform:scale(0.97); }
-  .btn.primary { background:linear-gradient(135deg,var(--teal2),var(--teal)); border-color:var(--teal); color:#fff; font-weight:600; box-shadow:0 4px 14px -4px color-mix(in srgb, var(--teal) 55%, transparent); }
-  .btn.primary:hover { filter:brightness(1.05); box-shadow:0 6px 18px -4px color-mix(in srgb, var(--teal) 65%, transparent); }
+  .btn.primary { background:linear-gradient(135deg,var(--teal2),var(--teal)); border-color:transparent; color:#fff; font-weight:600; box-shadow:0 4px 14px -5px color-mix(in srgb, var(--teal) 60%, transparent); }
+  .btn.primary:hover { filter:brightness(1.06); color:#fff; box-shadow:0 7px 18px -5px color-mix(in srgb, var(--teal) 70%, transparent); }
+  .btn.ghost { border-color:transparent; background:var(--bg2); }
   .btn.danger:hover { color:var(--red); border-color:var(--red); background:var(--red-light); }
   .btn svg { width:14px; height:14px; flex-shrink:0; }
   .btn:disabled { opacity:.4; cursor:not-allowed; pointer-events:none; box-shadow:none; }
 
   /* header */
   .page-header { padding:1.4rem 1.6rem; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; position:relative; overflow:hidden; }
-  .page-header::before { content:''; position:absolute; inset:0; height:3px; background:linear-gradient(90deg,var(--teal),var(--teal2),var(--amber)); }
+  .page-header::before { content:''; position:absolute; inset:0; height:3px; background:linear-gradient(90deg,var(--teal),var(--teal2),var(--amber),var(--indigo)); }
   .header-icon { width:36px; height:36px; border-radius:11px; background:linear-gradient(135deg,var(--teal2),var(--teal-dark)); display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; box-shadow:0 4px 12px -4px color-mix(in srgb, var(--teal) 60%, transparent); }
-  .page-header h1 { font-size:18px; font-weight:600; letter-spacing:-0.2px; display:flex; align-items:center; gap:10px; }
-  .page-header p { font-size:12.5px; color:var(--text2); margin-top:5px; }
+  .page-header h1 { font-size:18px; font-weight:650; letter-spacing:-0.2px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .page-header p { font-size:12.5px; color:var(--text2); margin-top:5px; line-height:1.6; }
   .toolbar { display:flex; gap:8px; flex-wrap:wrap; }
-  #appVersion { font-size:11px; font-weight:600; color:var(--teal-dark); background:var(--teal-light); padding:2px 9px; border-radius:999px; border:0.5px solid color-mix(in srgb, var(--teal) 35%, transparent); }
+  #appVersion { font-size:11px; font-weight:600; color:var(--teal-dark); background:var(--teal-light); padding:2px 9px; border-radius:999px; border:0.5px solid color-mix(in srgb, var(--teal) 32%, transparent); }
+
+  /* sticky quick nav */
+  .quicknav { position:sticky; top:0; z-index:60; margin:0 -0.25rem; padding:6px 0.25rem; background:color-mix(in srgb, var(--bg2) 82%, transparent); backdrop-filter:saturate(160%) blur(12px); -webkit-backdrop-filter:saturate(160%) blur(12px); border-radius:var(--radius-lg); }
+  .quicknav-inner { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding:2px; }
+  .quicknav-inner::-webkit-scrollbar { display:none; }
+  .qn-item { flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:500; color:var(--text2); text-decoration:none; padding:7px 13px; border-radius:999px; border:0.5px solid var(--border); background:var(--bg); transition:color .15s,background .15s,border-color .15s,box-shadow .15s; white-space:nowrap; }
+  .qn-item:hover { color:var(--text); box-shadow:var(--shadow-sm); }
+  .qn-item.active { color:#fff; background:linear-gradient(135deg,var(--teal2),var(--teal)); border-color:transparent; box-shadow:0 4px 12px -5px color-mix(in srgb, var(--teal) 65%, transparent); }
+  .qn-spacer { flex:1 1 auto; }
+
+  /* hero：目前花費 / 預計還要花 */
+  .hero { padding:1.15rem 1.4rem 1.15rem; display:grid; grid-template-columns:1fr 1px 1fr; gap:0 1.5rem; position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; inset:0; height:3px; background:linear-gradient(90deg,var(--teal2),var(--teal) 45%,var(--amber)); }
+  .hero-cell { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .hero-label { font-size:12px; font-weight:600; color:var(--text2); letter-spacing:.2px; }
+  .hero-val { font-size:clamp(30px,5.6vw,50px); font-weight:800; line-height:1.02; letter-spacing:-1.6px; font-variant-numeric:tabular-nums; color:var(--teal); word-break:break-word; }
+  .hero-val.amber { color:var(--amber); }
+  .hero-val.zero  { color:var(--text3); }
+  .hero-sub { font-size:11.5px; color:var(--text3); line-height:1.55; }
+  .hero-div { background:var(--border); }
+  .hero-foot { grid-column:1/-1; margin-top:1rem; padding-top:.8rem; border-top:0.5px solid var(--border); display:flex; flex-wrap:wrap; gap:5px 18px; font-size:12px; color:var(--text2); }
+  .hero-foot b { color:var(--text); font-weight:700; font-variant-numeric:tabular-nums; }
+  .hero-foot .ok b   { color:var(--teal-dark); }
+  .hero-foot .over b { color:var(--red); }
+
+  /* section shell */
+  .sect-card { padding:1.25rem 1.4rem 1.35rem; scroll-margin-top:calc(var(--nav-h) + 12px); }
+  .sect-head { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:1.05rem; }
+  .sect-head-l { display:flex; align-items:flex-start; gap:11px; min-width:0; }
+  .sect-icon { width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; background:linear-gradient(135deg,var(--teal-light),color-mix(in srgb,var(--teal) 22%,var(--teal-light))); }
+  .sect-icon.amber  { background:linear-gradient(135deg,var(--amber-light),color-mix(in srgb,var(--amber) 22%,var(--amber-light))); }
+  .sect-icon.indigo { background:linear-gradient(135deg,var(--indigo-light),color-mix(in srgb,var(--indigo) 22%,var(--indigo-light))); }
+  .sect-title { font-size:15px; font-weight:650; display:flex; align-items:center; gap:7px; flex-wrap:wrap; letter-spacing:-0.1px; }
+  .sect-sub { font-size:12px; color:var(--text2); margin-top:4px; line-height:1.6; }
+  .chip { font-size:11px; font-weight:500; color:var(--text2); background:var(--bg2); border:0.5px solid var(--border); padding:2px 9px; border-radius:999px; }
+  .chip.teal   { color:var(--teal-dark); background:var(--teal-light); border-color:color-mix(in srgb,var(--teal) 28%,transparent); }
+  .chip.amber  { color:var(--amber-dark); background:var(--amber-light); border-color:color-mix(in srgb,var(--amber) 28%,transparent); }
+  .chip.indigo { color:var(--indigo-dark); background:var(--indigo-light); border-color:color-mix(in srgb,var(--indigo) 28%,transparent); }
+  .sect-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .stat-inline { display:flex; gap:6px; align-items:baseline; }
+  .stat-inline span:first-child { font-size:11.5px; color:var(--text2); }
+  .stat-inline span:last-child { font-size:16px; font-weight:700; letter-spacing:-0.2px; }
 
   /* sync */
-  .sync-panel { padding:1.1rem 1.5rem; }
+  .sync-panel { padding:1.1rem 1.4rem; scroll-margin-top:calc(var(--nav-h) + 12px); }
   .sync-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .sync-title { font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:7px; }
   .sync-title svg { color:var(--teal); }
   .sync-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .sync-status { font-size:11px; font-weight:500; padding:3px 11px; border-radius:999px; }
   .sync-status.idle    { color:var(--text3); background:var(--bg3); }
-  .sync-status.loading { color:var(--amber); background:var(--amber-light); }
+  .sync-status.loading { color:var(--amber-dark); background:var(--amber-light); }
   .sync-status.ok      { color:var(--teal-dark); background:var(--teal-light); }
   .sync-status.err     { color:var(--red); background:var(--red-light); }
   .sync-settings { margin-top:14px; display:none; flex-direction:column; gap:10px; border-top:0.5px solid var(--border); padding-top:14px; }
   .sync-settings.open { display:flex; }
   .sync-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .sync-label { font-size:12px; color:var(--text2); white-space:nowrap; width:72px; }
-  .sync-input { flex:1; min-width:160px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); font-size:13px; font-family:inherit; padding:7px 11px; transition:border-color .15s,box-shadow .15s; }
-  .sync-input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 16%, transparent); }
-  .sync-hint { font-size:11.5px; color:var(--text2); line-height:1.7; background:var(--bg2); border-radius:var(--radius); padding:11px 13px; }
+  .sync-input { flex:1; min-width:160px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); font-size:13px; font-family:inherit; padding:8px 11px; transition:border-color .15s,box-shadow .15s; }
+  .sync-input:focus { outline:none; border-color:var(--teal); box-shadow:var(--ring); }
+  .sync-hint { font-size:11.5px; color:var(--text2); line-height:1.75; background:var(--bg2); border-radius:var(--radius); padding:11px 13px; }
   .sync-hint a { color:var(--teal); font-weight:500; }
   .sync-hint strong { color:var(--text); }
   .step { display:flex; gap:8px; align-items:flex-start; margin-bottom:4px; }
   .step:last-child { margin-bottom:0; }
-  .step-num { font-size:11px; font-weight:700; color:#fff; background:linear-gradient(135deg,var(--teal2),var(--teal)); border-radius:999px; width:18px; height:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .step-num { font-size:11px; font-weight:700; color:#fff; background:linear-gradient(135deg,var(--teal2),var(--teal)); border-radius:999px; width:18px; height:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
 
   /* budget */
-  .budget-row { padding:1.1rem 1.5rem; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .budget-row { padding:1rem 1.4rem; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .budget-row label { font-size:13px; color:var(--text2); font-weight:500; white-space:nowrap; display:flex; align-items:center; gap:6px; }
   .budget-row label svg { color:var(--teal); }
-  .budget-input { border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); font-size:15px; font-family:inherit; font-weight:600; padding:7px 11px; width:180px; transition:border-color .15s,box-shadow .15s; }
-  .budget-input:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 16%, transparent); }
+  .budget-input { border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); font-size:15px; font-family:inherit; font-weight:650; padding:8px 11px; width:180px; transition:border-color .15s,box-shadow .15s; font-variant-numeric:tabular-nums; }
+  .budget-input:focus { outline:none; border-color:var(--teal); box-shadow:var(--ring); }
   .save-hint { font-size:11px; font-weight:500; color:var(--teal-dark); background:var(--teal-light); padding:3px 11px; border-radius:999px; opacity:0; transition:opacity .3s; margin-left:auto; }
   .save-hint.show { opacity:1; }
 
   /* metrics */
   .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .metric-card { padding:1.1rem 1.3rem; position:relative; overflow:hidden; transition:box-shadow .2s,transform .2s; }
+  .metric-card { padding:1rem 1.2rem; position:relative; overflow:hidden; transition:box-shadow .2s,transform .2s; }
+  .metric-card::after { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--teal); opacity:.55; }
+  .metric-card.acc-amber::after { background:var(--amber); }
   .metric-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-2px); }
   .metric-icon { width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; margin-bottom:8px; background:var(--teal-light); color:var(--teal-dark); }
-  .metric-card.acc-amber .metric-icon { background:var(--amber-light); color:var(--amber); }
+  .metric-card.acc-amber .metric-icon { background:var(--amber-light); color:var(--amber-dark); }
   .metric-label { font-size:11px; font-weight:500; color:var(--text2); margin-bottom:4px; letter-spacing:.2px; }
-  .metric-val { font-size:23px; font-weight:700; line-height:1.15; letter-spacing:-0.3px; }
+  .metric-val { font-size:23px; font-weight:700; line-height:1.15; letter-spacing:-0.4px; font-variant-numeric:tabular-nums; }
   .metric-val.safe { color:var(--teal); }
   .metric-val.warn { color:var(--amber); }
   .metric-val.over { color:var(--red); }
 
   /* progress */
-  .progress-card { padding:1.1rem 1.5rem; }
+  .progress-card { padding:1rem 1.4rem; }
   .progress-track { height:10px; background:var(--bg3); border-radius:999px; overflow:hidden; }
   .progress-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--teal2),var(--teal)); transition:width .4s ease; }
   .progress-fill.warn { background:linear-gradient(90deg,#e0a339,var(--amber)); }
@@ -116,49 +171,114 @@
   .table-card { overflow:hidden; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
   .table-card::-webkit-scrollbar { height:8px; }
   .table-card::-webkit-scrollbar-thumb { background:var(--border2); border-radius:999px; }
+  .table-inner { border:0.5px solid var(--border); border-radius:var(--radius); }
   table { width:100%; border-collapse:collapse; min-width:620px; }
   thead { background:var(--bg2); }
-  th { padding:11px 12px; font-size:11px; font-weight:600; color:var(--text2); text-align:left; white-space:nowrap; border-bottom:0.5px solid var(--border); letter-spacing:.2px; }
+  th { padding:11px 12px; font-size:11px; font-weight:600; color:var(--text2); text-align:left; white-space:nowrap; border-bottom:0.5px solid var(--border); letter-spacing:.3px; }
   td { padding:0; border-bottom:0.5px solid var(--border); vertical-align:middle; }
   tbody tr:last-child td { border-bottom:none; }
   tbody tr { transition:background .12s; }
-  tbody tr:hover td { background:color-mix(in srgb, var(--teal) 5%, transparent); }
-  .td-num { font-size:11px; color:var(--text3); text-align:center; padding:8px 6px; }
-  .td-input { width:100%; border:none; background:transparent; font-size:14px; color:var(--text); padding:9px 12px; outline:none; font-family:inherit; border-radius:6px; transition:background .15s; }
-  .td-input:focus { background:var(--bg2); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--teal) 35%, transparent); }
+  tbody tr:nth-child(even) td { background:color-mix(in srgb, var(--bg2) 55%, transparent); }
+  tbody tr:hover td { background:color-mix(in srgb, var(--teal) 6%, transparent); }
+  .td-num { font-size:11px; color:var(--text3); text-align:center; padding:8px 6px; font-variant-numeric:tabular-nums; }
+  .td-input { width:100%; border:none; background:transparent; font-size:14px; color:var(--text); padding:9px 12px; outline:none; font-family:inherit; border-radius:6px; transition:background .15s,box-shadow .15s; }
+  .td-input:focus { background:var(--bg); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--teal) 42%, transparent); }
   .td-input::placeholder { color:var(--text3); }
   .td-input[type="number"] { text-align:right; }
-  .td-input.calc-input { text-align:right; }
+  .td-input.calc-input { text-align:right; font-variant-numeric:tabular-nums; }
   .td-input[type="number"]::-webkit-inner-spin-button,
   .td-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; }
-  .subtotal-cell { padding:9px 12px; font-size:14px; font-weight:600; color:var(--text); text-align:right; white-space:nowrap; }
+  .subtotal-cell { padding:9px 12px; font-size:14px; font-weight:650; color:var(--text); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .src-wrap { display:flex; flex-direction:column; }
-  .src-link { display:inline-flex; align-items:center; gap:4px; padding:2px 12px 7px; font-size:12px; color:var(--teal); font-weight:500; text-decoration:none; }
+  .src-link { display:inline-flex; align-items:center; gap:4px; padding:2px 12px 7px; font-size:12px; color:var(--teal); font-weight:500; text-decoration:none; word-break:break-all; }
   .src-link:hover { text-decoration:underline; }
   .src-thumb { display:block; width:72px; height:72px; margin:4px 12px 8px; border-radius:8px; border:0.5px solid var(--border2); object-fit:cover; cursor:zoom-in; box-shadow:var(--shadow-sm); transition:transform .15s; }
   .img-btn-row { display:flex; gap:6px; margin:3px 12px 2px; }
   .img-upload-btn { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; color:var(--teal-dark); background:var(--teal-light); border:0.5px dashed color-mix(in srgb, var(--teal) 45%, transparent); border-radius:999px; padding:3px 10px; margin:0; cursor:pointer; width:fit-content; transition:background .15s; font-family:inherit; }
   .img-upload-btn:hover { background:color-mix(in srgb, var(--teal) 20%, var(--teal-light)); }
-  .img-paste-btn { color:var(--amber); background:var(--amber-light); border-color:color-mix(in srgb, var(--amber) 45%, transparent); }
+  .img-paste-btn { color:var(--amber-dark); background:var(--amber-light); border-color:color-mix(in srgb, var(--amber) 45%, transparent); }
   .img-paste-btn:hover { background:color-mix(in srgb, var(--amber) 22%, var(--amber-light)); }
   .img-thumb-wrap { position:relative; width:fit-content; margin:4px 12px 8px; }
   .img-thumb-wrap .src-thumb { margin:0; }
   .img-remove-btn { position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:var(--red); color:#fff; border:1.5px solid var(--bg); font-size:10px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
   .img-remove-btn:hover { background:#8a2424; }
   .src-thumb:hover { transform:scale(1.05); }
-  .del-btn { background:none; border:none; cursor:pointer; color:var(--text3); padding:9px 10px; line-height:1; display:block; width:100%; border-radius:6px; transition:color .15s,background .15s; }
+  .del-btn { background:none; border:none; cursor:pointer; color:var(--text3); padding:8px 9px; line-height:1; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; transition:color .15s,background .15s; vertical-align:middle; }
+  .row-actions { display:flex; align-items:center; justify-content:flex-end; gap:2px; padding-right:6px; }
   .del-btn:hover { color:var(--red); background:var(--red-light); }
   tfoot td { background:var(--bg2); border-top:0.5px solid var(--border); }
   .tf-label { padding:11px 12px; font-size:12px; font-weight:600; color:var(--text2); }
-  .tf-total { padding:11px 12px; font-size:16px; font-weight:700; color:var(--text); text-align:right; white-space:nowrap; }
+  .tf-total { padding:11px 12px; font-size:16px; font-weight:700; color:var(--text); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
 
   .bottom-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  /* ══ 比價表 ══ */
+  .cmp-list { display:flex; flex-direction:column; gap:12px; }
+  .cmp-group { border:0.5px solid var(--border); border-radius:var(--radius); background:var(--bg2); overflow:hidden; }
+  .cmp-group-head { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg); border-bottom:0.5px solid var(--border); flex-wrap:wrap; }
+  .cmp-title-input { flex:1 1 180px; min-width:0; border:none; background:transparent; font-family:inherit; font-size:15px; font-weight:650; color:var(--text); padding:6px 8px; border-radius:var(--radius-sm); outline:none; letter-spacing:-0.1px; transition:background .15s,box-shadow .15s; }
+  .cmp-title-input:focus { background:var(--bg2); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--indigo) 40%, transparent); }
+  .cmp-title-input::placeholder { color:var(--text3); font-weight:500; }
+  .cmp-meta { font-size:11.5px; color:var(--text2); display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-variant-numeric:tabular-nums; }
+  .cmp-meta b { color:var(--teal-dark); font-weight:700; font-size:13px; }
+  .cmp-meta .save-tag { color:var(--amber-dark); background:var(--amber-light); border-radius:999px; padding:2px 8px; font-weight:600; }
+  .cmp-head-btns { display:flex; gap:4px; margin-left:auto; }
+  .icon-btn { background:none; border:0.5px solid transparent; cursor:pointer; color:var(--text3); border-radius:var(--radius-sm); padding:5px 8px; font-size:11.5px; font-family:inherit; line-height:1.4; display:inline-flex; align-items:center; gap:4px; transition:color .15s,background .15s,border-color .15s; }
+  .icon-btn:hover { color:var(--text); background:var(--bg2); border-color:var(--border); }
+  .icon-btn.danger:hover { color:var(--red); background:var(--red-light); border-color:transparent; }
+
+  .cmp-items { display:flex; flex-direction:column; }
+  .cmp-item {
+    display:grid; gap:4px 8px; padding:9px 12px 10px; border-top:0.5px solid var(--border);
+    grid-template-columns:26px minmax(0,1fr) 128px 30px;
+    grid-template-areas:
+      "rank store price del"
+      ".    meta  meta  .";
+    transition:background .15s;
+  }
+  .cmp-item:first-child { border-top:none; }
+  .cmp-item.best { background:color-mix(in srgb, var(--teal) 8%, transparent); }
+  .cmp-item.best .cmp-rank { background:linear-gradient(135deg,var(--teal2),var(--teal)); color:#fff; border-color:transparent; }
+  .cmp-rank { grid-area:rank; width:22px; height:22px; border-radius:999px; border:0.5px solid var(--border2); background:var(--bg); color:var(--text3); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:5px; flex-shrink:0; }
+  .cmp-store { grid-area:store; width:100%; border:none; background:transparent; font-family:inherit; font-size:14px; font-weight:600; color:var(--text); padding:7px 9px; border-radius:var(--radius-sm); outline:none; transition:background .15s,box-shadow .15s; }
+  .cmp-store:focus { background:var(--bg); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--teal) 42%, transparent); }
+  .cmp-store::placeholder { color:var(--text3); font-weight:500; }
+  .cmp-price-box { grid-area:price; display:flex; flex-direction:column; align-items:stretch; gap:3px; }
+  .cmp-price-inner { display:flex; align-items:center; gap:2px; background:var(--bg); border:0.5px solid var(--border2); border-radius:var(--radius-sm); padding:0 8px; transition:border-color .15s,box-shadow .15s; }
+  .cmp-price-inner:focus-within { border-color:var(--teal); box-shadow:var(--ring); }
+  .cmp-cur { font-size:11px; color:var(--text3); font-weight:600; flex-shrink:0; }
+  .cmp-price { width:100%; min-width:0; border:none; background:transparent; font-family:inherit; font-size:16px; font-weight:700; color:var(--text); text-align:right; padding:7px 0; outline:none; font-variant-numeric:tabular-nums; letter-spacing:-0.2px; }
+  .cmp-price::placeholder { color:var(--text3); font-weight:500; }
+  .cmp-price::-webkit-inner-spin-button, .cmp-price::-webkit-outer-spin-button { -webkit-appearance:none; }
+  .cmp-badge { font-size:10.5px; font-weight:700; text-align:center; border-radius:999px; padding:2px 6px; letter-spacing:.2px; font-variant-numeric:tabular-nums; }
+  .cmp-badge.win  { color:#fff; background:linear-gradient(135deg,var(--teal2),var(--teal)); }
+  .cmp-badge.diff { color:var(--text2); background:var(--bg3); font-weight:600; }
+  .cmp-badge.none { color:var(--text3); background:transparent; }
+  .cmp-del { grid-area:del; align-self:start; }
+  .cmp-detail { grid-area:meta; display:flex; flex-wrap:wrap; align-items:center; gap:5px 8px; }
+  .cmp-sub { border:none; background:transparent; font-family:inherit; font-size:12.5px; color:var(--text2); padding:5px 9px; border-radius:var(--radius-sm); outline:none; min-width:0; transition:background .15s,box-shadow .15s; }
+  .cmp-sub:focus { background:var(--bg); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--teal) 38%, transparent); color:var(--text); }
+  .cmp-sub::placeholder { color:var(--text3); }
+  .cmp-note { flex:1 1 190px; }
+  .cmp-url-inp { flex:1 1 100%; display:none; font-size:12px; }
+  .cmp-item.show-url .cmp-url-inp { display:block; }
+  .cmp-detail .img-btn-row { margin:0; flex:0 0 auto; }
+  .cmp-url-btn { color:var(--indigo-dark); background:var(--indigo-light); border-color:color-mix(in srgb, var(--indigo) 45%, transparent); }
+  .cmp-url-btn:hover { background:color-mix(in srgb, var(--indigo) 20%, var(--indigo-light)); }
+  .cmp-media { flex:1 1 100%; display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-left:9px; }
+  .cmp-media:empty { display:none; }
+  .cmp-media .img-thumb-wrap { margin:0; }
+  .cmp-media .src-thumb { width:58px; height:58px; }
+  .cmp-media .src-link { padding:0; }
+  .cmp-empty { padding:26px 16px; text-align:center; color:var(--text2); font-size:13px; line-height:1.9; }
+  .cmp-empty .cmp-empty-icon { font-size:30px; display:block; margin-bottom:6px; }
+  .cmp-add-row { padding:8px 12px 10px; }
 
   /* modal */
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,15,12,.5); backdrop-filter:blur(3px); z-index:100; align-items:center; justify-content:center; padding:1rem; }
   .modal-overlay.open { display:flex; }
   .modal { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:1.5rem; max-width:480px; width:100%; box-shadow:var(--shadow-lg); }
-  .modal h3 { font-size:16px; font-weight:600; margin-bottom:8px; }
+  .modal h3 { font-size:16px; font-weight:650; margin-bottom:8px; }
   .modal p { font-size:13px; color:var(--text2); margin-bottom:1rem; line-height:1.6; }
   .modal-btns { display:flex; gap:8px; justify-content:flex-end; }
   .file-drop { border:1.5px dashed var(--border2); border-radius:var(--radius); background:var(--bg2); padding:2rem 1rem; text-align:center; cursor:pointer; margin-bottom:1rem; transition:border-color .15s,background .15s; position:relative; }
@@ -174,45 +294,80 @@
   .img-preview-close { position:absolute; top:-14px; right:-14px; width:32px; height:32px; border-radius:50%; background:var(--bg); color:var(--text); border:0.5px solid var(--border2); font-size:14px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); }
   .img-preview-close:hover { color:var(--red); }
 
+  /* back to top */
+  .to-top { position:fixed; right:16px; bottom:16px; z-index:70; width:42px; height:42px; border-radius:50%; border:0.5px solid var(--border); background:var(--bg); color:var(--text2); box-shadow:var(--shadow); cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .2s,transform .2s,color .15s; }
+  .to-top.show { opacity:1; pointer-events:auto; transform:none; }
+  .to-top:hover { color:var(--teal); }
+
   /* 平板：維持單欄排版但收斂邊距 */
   @media(max-width:900px) and (min-width:601px){
-    .wrap { max-width:720px; }
+    .wrap { max-width:760px; }
     .page-header { padding:1.2rem 1.3rem; }
   }
   /* 大螢幕桌機：加寬版面並放大字級，閱讀更舒適 */
   @media(min-width:1280px){
     .wrap { max-width:1320px; gap:16px; }
-    body { padding-top:2.75rem; padding-bottom:3.5rem; }
+    body { padding-top:2.5rem; padding-bottom:4rem; }
     .page-header { padding:1.6rem 2.2rem; }
     .page-header h1 { font-size:20px; }
     .page-header p { font-size:13px; }
     .header-icon { width:40px; height:40px; border-radius:12px; }
     .header-icon svg { width:20px; height:20px; }
-    .metric-card { padding:1.3rem 1.6rem; }
+    .metric-card { padding:1.2rem 1.5rem; }
     .metric-val { font-size:25px; }
     .metric-icon { width:28px; height:28px; font-size:14px; }
+    .sect-card { padding:1.4rem 1.7rem 1.5rem; }
+    .sect-title { font-size:16px; }
     th { font-size:11.5px; padding:12px 14px; }
     .td-input { font-size:14.5px; }
     .subtotal-cell { font-size:14.5px; }
     .tf-total { font-size:17px; }
   }
   @media(max-width:600px){
-    .metrics { grid-template-columns:1fr 1fr; }
+    body { padding:1rem .7rem 3.5rem; }
+    .wrap { gap:11px; }
+    .hero { grid-template-columns:1fr; padding:1rem 1rem 1.05rem; }
+    .hero-div { height:1px; margin:.9rem 0; }
+    .hero-val { font-size:clamp(30px,11.5vw,46px); letter-spacing:-1.2px; }
+    .hero-foot { margin-top:.9rem; gap:4px 14px; }
+    .metrics { grid-template-columns:1fr 1fr; gap:9px; }
     .metrics .metric-card:last-child { grid-column:span 2; }
-    body { padding:1.25rem .75rem 2rem; }
-    .wish-card { padding:.75rem .75rem !important; }
-    .wish-card .table-card { margin:0 -.75rem; border-radius:0 !important; border-left:none !important; border-right:none !important; }
+    .metric-card { padding:.85rem .95rem; }
+    .metric-val { font-size:20px; }
+    .page-header { padding:1.1rem 1rem; }
+    .page-header h1 { font-size:16.5px; }
+    .sync-panel, .budget-row, .progress-card { padding:.9rem 1rem; }
+    .sect-card { padding:1rem .85rem 1.1rem; }
+    .sect-head { margin-bottom:.85rem; }
+    .sect-actions { width:100%; justify-content:flex-start; }
+    .sect-card > .table-card { margin:0 -.85rem; border-radius:0 !important; border-left:none !important; border-right:none !important; }
+    .budget-input { flex:1; width:auto; min-width:120px; }
+    .quicknav { position:sticky; margin:0 -.7rem; padding:6px .7rem; border-radius:0; }
+    /* 比價：手機上改為單欄堆疊，價格獨立一行放大 */
+    .cmp-item {
+      grid-template-columns:24px minmax(0,1fr) 112px 28px;
+      grid-template-areas:
+        "rank store price del"
+        ".    meta  meta  meta";
+      padding:9px 9px 10px;
+    }
+    .cmp-meta-row { grid-template-columns:1fr; }
+    .cmp-price { font-size:15px; }
+    .cmp-group-head { padding:9px 9px; row-gap:2px; }
+    .cmp-title-input { flex:1 1 110px; font-size:14.5px; padding:5px 6px; }
+    .cmp-head-btns { order:2; }
+    .cmp-meta { order:3; flex:1 1 100%; padding:0 6px 2px; }
   }
   /* 數量 ± 控制 */
   .qty-ctrl { display:flex; align-items:center; justify-content:flex-end; }
-  .qty-btn { background:var(--bg3); border:none; cursor:pointer; color:var(--text2); width:24px; height:28px; font-size:16px; line-height:1; flex-shrink:0; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:background .15s,color .15s; }
-  .qty-btn:hover { background:var(--teal-light); color:var(--teal-dark); }
-  .qty-btn:active { transform:scale(0.92); }
+  .qty-btn, .wish-qty-btn, .purchase-qty-btn { background:var(--bg3); border:none; cursor:pointer; color:var(--text2); width:24px; height:28px; font-size:16px; line-height:1; flex-shrink:0; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:background .15s,color .15s; font-family:inherit; }
+  .qty-btn:hover, .wish-qty-btn:hover, .purchase-qty-btn:hover { background:var(--teal-light); color:var(--teal-dark); }
+  .qty-btn:active, .wish-qty-btn:active, .purchase-qty-btn:active { transform:scale(0.92); }
   input.qty-num { text-align:center !important; width:36px !important; padding:0 2px !important; }
   /* 名稱欄自動換行 */
   input.name-inp { white-space:normal; word-break:break-all; }
-  textarea.name-ta { width:100%; border:none; background:transparent; font-size:14px; color:var(--text); padding:8px 12px; outline:none; font-family:inherit; resize:none; overflow:hidden; min-height:36px; line-height:1.4; display:block; border-radius:6px; transition:background .15s; }
-  textarea.name-ta:focus { background:var(--bg2); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--teal) 35%, transparent); }
+  textarea.name-ta { width:100%; border:none; background:transparent; font-size:14px; color:var(--text); padding:8px 12px; outline:none; font-family:inherit; resize:none; overflow:hidden; min-height:36px; line-height:1.45; display:block; border-radius:6px; transition:background .15s,box-shadow .15s; }
+  textarea.name-ta:focus { background:var(--bg); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--teal) 42%, transparent); }
   textarea.name-ta::placeholder { color:var(--text3); }
   select.pri-select {
     -webkit-appearance:none; -moz-appearance:none; appearance:none;
@@ -225,8 +380,10 @@
   .gs-block-title { font-size:12px; font-weight:600; color:var(--text2); display:flex; align-items:center; gap:6px; }
   .gs-block-title svg { color:#0F9D58; }
   .gs-script-box { background:var(--bg3); border-radius:var(--radius); padding:8px 10px; font-size:11px; font-family:'SF Mono','Consolas','Menlo',monospace; color:var(--text); white-space:pre; overflow-x:auto; line-height:1.6; }
-  /* 許願表卡片 icon */
-  .wish-icon-badge { width:32px; height:32px; border-radius:10px; background:linear-gradient(135deg,var(--amber-light),#f5dfb8); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  @media (prefers-reduced-motion:reduce){
+    html { scroll-behavior:auto; }
+    * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
+  }
 </style>
 </head>
 <body>
@@ -242,7 +399,7 @@
         電器採購成本統計表
         <span id="appVersion"></span>
       </h1>
-      <p>資料存於本機。可透過下方「雲端同步」讓兩人共用同一份資料。</p>
+      <p>採購預算、許願清單、已購追蹤與逛街比價一頁搞定。資料存於本機，可透過「雲端同步」讓兩人共用同一份。</p>
     </div>
     <div class="toolbar">
       <button class="btn" id="importBtn">
@@ -256,8 +413,277 @@
     </div>
   </div>
 
+  <!-- Quick nav -->
+  <nav class="quicknav" id="quickNav">
+    <div class="quicknav-inner">
+      <a class="qn-item" href="#sec-compare">⚖️ 比價表</a>
+      <a class="qn-item" href="#sec-buy">🧾 採購表</a>
+      <a class="qn-item" href="#sec-wish">🛒 許願表</a>
+      <a class="qn-item" href="#sec-done">✅ 已購買</a>
+      <span class="qn-spacer"></span>
+      <a class="qn-item" href="#sec-sync">☁️ 同步設定</a>
+    </div>
+  </nav>
+
+  <!-- ══ 大數字：目前花費 / 預計還要花 ══ -->
+  <div class="card hero">
+    <div class="hero-cell">
+      <div class="hero-label">💸 目前花費（實際付出去的錢）</div>
+      <div class="hero-val" id="heroSpent">NT$0</div>
+      <div class="hero-sub" id="heroSpentSub">已購買清單的「已付訂金」總和</div>
+    </div>
+    <div class="hero-div"></div>
+    <div class="hero-cell">
+      <div class="hero-label">🧾 預計還要花</div>
+      <div class="hero-val amber" id="heroLeft">NT$0</div>
+      <div class="hero-sub" id="heroLeftSub">待付尾款 ＋ 採購表裡還沒買的</div>
+    </div>
+    <div class="hero-foot">
+      <span>預計總支出 <b id="heroTotal">NT$0</b></span>
+      <span>預算 <b id="heroBudget">NT$500,000</b></span>
+      <span id="heroDiff">預算還剩 <b>NT$500,000</b></span>
+    </div>
+  </div>
+
+  <!-- ══ 比價表（逛街用，不列入任何金額計算） ══ -->
+  <div class="card sect-card" id="sec-compare">
+    <div class="sect-head">
+      <div class="sect-head-l">
+        <span class="sect-icon indigo">⚖️</span>
+        <div>
+          <div class="sect-title">
+            比價表
+            <span class="chip indigo">逛街用</span>
+          </div>
+          <div class="sect-sub">同一件商品在不同店家的報價放一起比，系統自動標出最便宜的那家。純比價，不列入預算、不計入任何合計金額。</div>
+        </div>
+      </div>
+      <div class="sect-actions">
+        <button class="btn primary" id="addCompareBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增比價商品
+        </button>
+      </div>
+    </div>
+    <div class="cmp-list" id="compareList"></div>
+  </div>
+
+  <!-- Budget -->
+  <div class="card budget-row">
+    <label for="budgetInput">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      預算上限
+    </label>
+    <input type="text" inputmode="text" id="budgetInput" class="budget-input calc-input" title="可輸入算式，例如 400000+50000，按 Enter 或點到別處即算出" value="500000" />
+    <span style="font-size:13px;color:var(--text2);">元</span>
+    <span class="save-hint" id="saveHint">已儲存 ✓</span>
+  </div>
+
+  <!-- Metrics 採購 -->
+  <div class="metrics">
+    <div class="card metric-card"><div class="metric-icon">💰</div><div class="metric-label">採購預算</div><div class="metric-val" id="mBudget">NT$500,000</div></div>
+    <div class="card metric-card"><div class="metric-icon">🛍️</div><div class="metric-label">採購已用</div><div class="metric-val" id="mSpent">NT$0</div></div>
+    <div class="card metric-card"><div class="metric-icon">✅</div><div class="metric-label">採購剩餘</div><div class="metric-val safe" id="mRemain">NT$500,000</div></div>
+  </div>
+
+  <!-- Metrics 年費 -->
+  <div class="metrics">
+    <div class="card metric-card acc-amber">
+      <div class="metric-icon">📅</div>
+      <div class="metric-label">每年花費合計</div>
+      <div class="metric-val warn" id="mAnnual">NT$0</div>
+    </div>
+    <div class="card metric-card acc-amber">
+      <div class="metric-icon">📆</div>
+      <div class="metric-label">每月平均花費</div>
+      <div class="metric-val" id="mMonthly" style="color:var(--amber);">NT$0</div>
+    </div>
+    <div class="card metric-card acc-amber">
+      <div class="metric-icon">📊</div>
+      <div class="metric-label">10年總花費（採購＋年費）</div>
+      <div class="metric-val" id="mTen" style="color:var(--text2);font-size:17px;">NT$0</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card progress-card">
+    <div class="progress-track"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-labels"><span id="pctLeft">使用 0%</span><span id="pctRight">剩餘 100%</span></div>
+  </div>
+
+  <!-- Table -->
+  <div class="card sect-card" id="sec-buy">
+    <div class="sect-head">
+      <div class="sect-head-l">
+        <span class="sect-icon">🧾</span>
+        <div>
+          <div class="sect-title">
+            採購成本表
+            <span class="chip teal">列入預算</span>
+          </div>
+          <div class="sect-sub">主力清單：數量、單價、每年花費都會計入上方的預算與統計。</div>
+        </div>
+      </div>
+      <div class="sect-actions">
+        <button class="btn primary" id="addBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增項目
+        </button>
+      </div>
+    </div>
+    <div class="table-card table-inner">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px;">#</th>
+          <th style="min-width:140px;">家電總類</th>
+          <th style="width:60px;text-align:right;">數量</th>
+          <th style="width:110px;text-align:right;">單價（元）</th>
+          <th style="width:110px;text-align:right;">採購小計</th>
+          <th style="width:120px;text-align:right;">每年花費（元）</th>
+          <th style="min-width:180px;">來源 / 網址</th>
+          <th style="width:104px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4"><div class="tf-label">採購合計</div></td>
+          <td><div class="tf-total" id="totalCell">NT$0</div></td>
+          <td colspan="3"></td>
+        </tr>
+        <tr>
+          <td colspan="4"><div class="tf-label" style="color:var(--amber);">每年花費合計</div></td>
+          <td></td>
+          <td><div class="tf-total" id="annualTotalCell" style="color:var(--amber);">NT$0</div></td>
+          <td colspan="2"></td>
+        </tr>
+        <tr style="background:var(--teal-light);">
+          <td colspan="4"><div class="tf-label" style="color:var(--teal-dark);">採購剩餘預算</div></td>
+          <td><div class="tf-total" id="remainCell" style="color:var(--teal-dark);">NT$0</div></td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>
+  </div>
+
+  <!-- 許願表 -->
+  <div class="card sect-card" id="sec-wish">
+    <div class="sect-head">
+      <div class="sect-head-l">
+        <span class="sect-icon amber">🛒</span>
+        <div>
+          <div class="sect-title">
+            許願表
+            <span class="chip amber">家具尚缺清單</span>
+          </div>
+          <div class="sect-sub">記錄想買還沒買的項目，預估金額僅供參考，不影響採購預算。</div>
+        </div>
+      </div>
+      <div class="sect-actions">
+        <div class="stat-inline">
+          <span>預估總額</span>
+          <span id="wishTotal" class="money" style="color:var(--teal);">NT$0</span>
+        </div>
+        <button class="btn primary" id="addWishBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增
+        </button>
+      </div>
+    </div>
+    <div class="table-card table-inner">
+      <table style="min-width:1020px;">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th style="min-width:150px;">項目名稱</th>
+            <th style="width:80px;">類別</th>
+            <th style="width:90px;text-align:right;">數量</th>
+            <th style="width:110px;text-align:right;">單價（元）</th>
+            <th style="width:100px;text-align:right;">小計</th>
+            <th style="width:110px;text-align:right;">年費（元）</th>
+            <th style="width:80px;text-align:center;">優先度</th>
+            <th style="min-width:180px;">來源 / 網址</th>
+            <th style="min-width:100px;">備註</th>
+            <th style="width:84px;"></th>
+          </tr>
+        </thead>
+        <tbody id="wishBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5"><div class="tf-label">預估合計</div></td>
+            <td><div class="tf-total" id="wishTotalCell" style="text-align:right;">NT$0</div></td>
+            <td colspan="5"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- 已購買清單 -->
+  <div class="card sect-card" id="sec-done">
+    <div class="sect-head">
+      <div class="sect-head-l">
+        <span class="sect-icon">✅</span>
+        <div>
+          <div class="sect-title">
+            已購買清單
+            <span class="chip teal">訂金／尾款追蹤</span>
+          </div>
+          <div class="sect-sub">記錄已下訂或已購買的項目。可從上方採購表按「✅」自動帶入，不用重打。</div>
+        </div>
+      </div>
+      <div class="sect-actions">
+        <div class="stat-inline">
+          <span>總金額</span>
+          <span id="purchaseGrandTotal" class="money">NT$0</span>
+        </div>
+        <div class="stat-inline">
+          <span>已付款</span>
+          <span id="purchasePaidTotal" class="money" style="color:var(--teal);">NT$0</span>
+        </div>
+        <div class="stat-inline">
+          <span>尾款待付</span>
+          <span id="purchaseRemainTotal" class="money" style="color:var(--amber);">NT$0</span>
+        </div>
+        <button class="btn primary" id="addPurchaseBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增
+        </button>
+      </div>
+    </div>
+    <div class="table-card table-inner">
+      <table style="min-width:860px;">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th style="min-width:150px;">項目名稱</th>
+            <th style="width:90px;text-align:right;">數量</th>
+            <th style="width:110px;text-align:right;">單價（元）</th>
+            <th style="width:110px;text-align:right;">總價</th>
+            <th style="width:120px;text-align:right;">已付訂金（元）</th>
+            <th style="width:120px;text-align:right;">剩餘尾款</th>
+            <th style="min-width:100px;">備註</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="purchaseBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4"><div class="tf-label">合計</div></td>
+            <td><div class="tf-total" id="purchaseTotalCell" style="text-align:right;font-size:14px;">NT$0</div></td>
+            <td><div class="tf-total" id="purchaseDepositCell" style="text-align:right;font-size:14px;color:var(--teal-dark);">NT$0</div></td>
+            <td><div class="tf-total" id="purchaseRemainCell" style="text-align:right;color:var(--amber);">NT$0</div></td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
   <!-- Sync Panel -->
-  <div class="card sync-panel">
+  <div class="card sync-panel" id="sec-sync">
     <div class="sync-header">
       <div>
         <div class="sync-title">
@@ -355,211 +781,19 @@ function doPost(e) {
     </div>
   </div>
 
-  <!-- Budget -->
-  <div class="card budget-row">
-    <label for="budgetInput">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-      預算上限
-    </label>
-    <input type="text" inputmode="text" id="budgetInput" class="budget-input calc-input" title="可輸入算式，例如 400000+50000，按 Enter 或點到別處即算出" value="500000" />
-    <span style="font-size:13px;color:var(--text2);">元</span>
-    <span class="save-hint" id="saveHint">已儲存 ✓</span>
-  </div>
-
-  <!-- Metrics 採購 -->
-  <div class="metrics">
-    <div class="card metric-card"><div class="metric-icon">💰</div><div class="metric-label">採購預算</div><div class="metric-val" id="mBudget">NT$500,000</div></div>
-    <div class="card metric-card"><div class="metric-icon">🛍️</div><div class="metric-label">採購已用</div><div class="metric-val" id="mSpent">NT$0</div></div>
-    <div class="card metric-card"><div class="metric-icon">✅</div><div class="metric-label">採購剩餘</div><div class="metric-val safe" id="mRemain">NT$500,000</div></div>
-  </div>
-
-  <!-- Metrics 年費 -->
-  <div class="metrics">
-    <div class="card metric-card acc-amber">
-      <div class="metric-icon">📅</div>
-      <div class="metric-label">每年花費合計</div>
-      <div class="metric-val warn" id="mAnnual">NT$0</div>
-    </div>
-    <div class="card metric-card acc-amber">
-      <div class="metric-icon">📆</div>
-      <div class="metric-label">每月平均花費</div>
-      <div class="metric-val" id="mMonthly" style="color:var(--amber);">NT$0</div>
-    </div>
-    <div class="card metric-card acc-amber">
-      <div class="metric-icon">📊</div>
-      <div class="metric-label">10年總花費（採購＋年費）</div>
-      <div class="metric-val" id="mTen" style="color:var(--text2);font-size:17px;">NT$0</div>
-    </div>
-  </div>
-
-  <!-- Progress -->
-  <div class="card progress-card">
-    <div class="progress-track"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
-    <div class="progress-labels"><span id="pctLeft">使用 0%</span><span id="pctRight">剩餘 100%</span></div>
-  </div>
-
-  <!-- Table -->
-  <div class="card table-card">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:36px;">#</th>
-          <th style="min-width:140px;">家電總類</th>
-          <th style="width:60px;text-align:right;">數量</th>
-          <th style="width:110px;text-align:right;">單價（元）</th>
-          <th style="width:110px;text-align:right;">採購小計</th>
-          <th style="width:120px;text-align:right;">每年花費（元）</th>
-          <th style="min-width:180px;">來源 / 網址</th>
-          <th style="width:40px;"></th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-      <tfoot>
-        <tr>
-          <td colspan="4"><div class="tf-label">採購合計</div></td>
-          <td><div class="tf-total" id="totalCell">NT$0</div></td>
-          <td colspan="3"></td>
-        </tr>
-        <tr>
-          <td colspan="4"><div class="tf-label" style="color:var(--amber);">每年花費合計</div></td>
-          <td></td>
-          <td><div class="tf-total" id="annualTotalCell" style="color:var(--amber);">NT$0</div></td>
-          <td colspan="2"></td>
-        </tr>
-        <tr style="background:var(--teal-light);">
-          <td colspan="4"><div class="tf-label" style="color:var(--teal-dark);">採購剩餘預算</div></td>
-          <td><div class="tf-total" id="remainCell" style="color:var(--teal-dark);">NT$0</div></td>
-          <td colspan="3"></td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-
   <!-- Bottom -->
   <div class="bottom-bar">
-    <button class="btn primary" id="addBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      新增項目
-    </button>
     <button class="btn danger" id="clearBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
       清空所有資料
     </button>
   </div>
 
-  <!-- 許願表 -->
-  <div class="card wish-card" style="padding:1.3rem 1.5rem;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.1rem;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span class="wish-icon-badge">🛒</span>
-        <div>
-          <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:7px;">
-            許願表
-            <span style="font-size:11px;color:var(--text2);font-weight:500;background:var(--bg2);padding:2px 9px;border-radius:999px;">家具尚缺清單</span>
-          </div>
-          <div style="font-size:12px;color:var(--text2);margin-top:3px;">記錄想買還沒買的項目，預估金額僅供參考</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span style="font-size:12px;color:var(--text2);">預估總額</span>
-        <span id="wishTotal" style="font-size:16px;font-weight:700;color:var(--teal);">NT$0</span>
-        <button class="btn primary" id="addWishBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          新增
-        </button>
-      </div>
-    </div>
-    <div class="table-card" style="border-radius:var(--radius);border:0.5px solid var(--border);">
-      <table style="min-width:1020px;">
-        <thead>
-          <tr>
-            <th style="width:36px;">#</th>
-            <th style="min-width:150px;">項目名稱</th>
-            <th style="width:80px;">類別</th>
-            <th style="width:90px;text-align:right;">數量</th>
-            <th style="width:110px;text-align:right;">單價（元）</th>
-            <th style="width:100px;text-align:right;">小計</th>
-            <th style="width:110px;text-align:right;">年費（元）</th>
-            <th style="width:80px;text-align:center;">優先度</th>
-            <th style="min-width:180px;">來源 / 網址</th>
-            <th style="min-width:100px;">備註</th>
-            <th style="width:60px;"></th>
-          </tr>
-        </thead>
-        <tbody id="wishBody"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="5"><div class="tf-label">預估合計</div></td>
-            <td><div class="tf-total" id="wishTotalCell" style="text-align:right;">NT$0</div></td>
-            <td colspan="5"></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
-
-  <!-- 已購買清單 -->
-  <div class="card wish-card" style="padding:1.3rem 1.5rem;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.1rem;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span class="wish-icon-badge" style="background:linear-gradient(135deg,var(--teal-light),#cdeee0);">✅</span>
-        <div>
-          <div style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:7px;">
-            已購買清單
-            <span style="font-size:11px;color:var(--text2);font-weight:500;background:var(--bg2);padding:2px 9px;border-radius:999px;">訂金／尾款追蹤</span>
-          </div>
-          <div style="font-size:12px;color:var(--text2);margin-top:3px;">記錄已下訂或已購買的項目。可從上方採購表按「帶入已購」自動帶入，不用重打</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-        <div style="display:flex;gap:6px;align-items:baseline;">
-          <span style="font-size:12px;color:var(--text2);">總金額</span>
-          <span id="purchaseGrandTotal" style="font-size:16px;font-weight:700;color:var(--text);">NT$0</span>
-        </div>
-        <div style="display:flex;gap:6px;align-items:baseline;">
-          <span style="font-size:12px;color:var(--text2);">已付款</span>
-          <span id="purchasePaidTotal" style="font-size:16px;font-weight:700;color:var(--teal);">NT$0</span>
-        </div>
-        <div style="display:flex;gap:6px;align-items:baseline;">
-          <span style="font-size:12px;color:var(--text2);">尾款待付</span>
-          <span id="purchaseRemainTotal" style="font-size:16px;font-weight:700;color:var(--amber);">NT$0</span>
-        </div>
-        <button class="btn primary" id="addPurchaseBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          新增
-        </button>
-      </div>
-    </div>
-    <div class="table-card" style="border-radius:var(--radius);border:0.5px solid var(--border);">
-      <table style="min-width:860px;">
-        <thead>
-          <tr>
-            <th style="width:36px;">#</th>
-            <th style="min-width:150px;">項目名稱</th>
-            <th style="width:90px;text-align:right;">數量</th>
-            <th style="width:110px;text-align:right;">單價（元）</th>
-            <th style="width:110px;text-align:right;">總價</th>
-            <th style="width:120px;text-align:right;">已付訂金（元）</th>
-            <th style="width:120px;text-align:right;">剩餘尾款</th>
-            <th style="min-width:100px;">備註</th>
-            <th style="width:40px;"></th>
-          </tr>
-        </thead>
-        <tbody id="purchaseBody"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="4"><div class="tf-label">合計</div></td>
-            <td><div class="tf-total" id="purchaseTotalCell" style="text-align:right;font-size:14px;">NT$0</div></td>
-            <td><div class="tf-total" id="purchaseDepositCell" style="text-align:right;font-size:14px;color:var(--teal-dark);">NT$0</div></td>
-            <td><div class="tf-total" id="purchaseRemainCell" style="text-align:right;color:var(--amber);">NT$0</div></td>
-            <td colspan="2"></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
-
 </div>
+
+<button type="button" class="to-top" id="toTopBtn" title="回到頂端" aria-label="回到頂端">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+</button>
 
 <!-- Import Modal -->
 <div class="modal-overlay" id="importModal">
@@ -589,7 +823,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.5';
+const APP_VERSION = 'v2.7';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -716,18 +950,21 @@ async function findImageFileFromClipboard(){
 
 function load() {
   try {
-    const r=localStorage.getItem(LS.ROWS), b=localStorage.getItem(LS.BUDGET), w=localStorage.getItem('ar-wishes'), pc=localStorage.getItem('ar-purchases');
+    const r=localStorage.getItem(LS.ROWS), b=localStorage.getItem(LS.BUDGET), w=localStorage.getItem('ar-wishes'), pc=localStorage.getItem('ar-purchases'), cp=localStorage.getItem('ar-compares');
     if(r) rows=JSON.parse(r);
     if(b) budget=parseFloat(b)||500000;
     if(w) wishes=JSON.parse(w);
     if(pc) purchases=JSON.parse(pc);
+    if(cp) compares=normalizeCompares(JSON.parse(cp));
   } catch(e){}
-  if(!rows.length)   rows=[newRow(),newRow(),newRow()];
-  if(!wishes.length) wishes=[newWish()];
+  if(!rows.length)     rows=[newRow(),newRow(),newRow()];
+  if(!wishes.length)   wishes=[newWish()];
+  if(!compares.length) compares=[newCompare()];
   document.getElementById('budgetInput').value = budget;
   buildTable(); updateTotals();
   buildWishTable();
   buildPurchaseTable();
+  buildCompare();
 }
 
 const getTotal       = () => rows.reduce((s,r)=>s+(parseFloat(r.qty)||0)*(parseFloat(r.price)||0),0);
@@ -772,6 +1009,8 @@ function updateTotals() {
     const a=document.querySelector('.annual-cell[data-id="'+r.id+'"]');
     if(a) a.textContent=(parseFloat(r.annualCost)||0)>0?fmt(parseFloat(r.annualCost)):'—';
   });
+
+  updateHero();
 }
 
 const LSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
@@ -812,11 +1051,11 @@ function buildTable() {
         </div>
         ${row.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${row.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-id="${row.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(row.srcUrl)}
       </div></td>
-      <td style="white-space:nowrap;">
+      <td><div class="row-actions">
         <button class="del-btn copy-purchase-btn" data-id="${row.id}" title="帶入已購買清單（記錄訂金/尾款）" style="color:var(--amber);font-size:13px;line-height:1;">✅</button>
         <button class="del-btn move-wish-btn" data-id="${row.id}" title="移至許願表" style="color:var(--teal);">${MOVE_DOWN_SVG}</button>
         <button class="del-btn" data-id="${row.id}" title="刪除">${DSVG}</button>
-      </td>`;
+      </div></td>`;
     tbody.appendChild(tr);
     /* textarea 自動高度 */
     const ta=tr.querySelector('.name-ta');
@@ -934,10 +1173,11 @@ document.getElementById('addBtn').addEventListener('click',()=>{
   if(all.length) all[all.length-1].focus();
 });
 document.getElementById('clearBtn').addEventListener('click',()=>{
-  if(!confirm('確定要清空所有資料嗎？\n採購表、許願表、已購買清單都會被清空。\n此動作無法復原。'))return;
+  if(!confirm('確定要清空所有資料嗎？\n採購表、許願表、已購買清單、比價表都會被清空。\n此動作無法復原。'))return;
   rows=[newRow(),newRow(),newRow()]; buildTable(); updateTotals(); persist();
   wishes=[newWish()]; buildWishTable(); persistWishes();
   purchases=[]; buildPurchaseTable(); persistPurchases();
+  compares=[newCompare()]; buildCompare(); persistCompares();
 });
 document.getElementById('budgetInput').addEventListener('input',e=>{
   budget=parseFloat(e.target.value)||0; updateTotals(); persist();
@@ -975,6 +1215,16 @@ function mergeLocalImages(newArr, oldArr){
   const oldMap = new Map(oldArr.map(x=>[x.id, x.imgData]));
   return newArr.map(x => ({ ...x, imgData: x.imgData || oldMap.get(x.id) || '' }));
 }
+/* 比價表的照片藏在 items 裡，需逐層處理 */
+const stripCompareImages = arr => (arr||[]).map(c => ({ ...c, items:(c.items||[]).map(({imgData, ...rest}) => rest) }));
+function mergeLocalCompareImages(newArr, oldArr){
+  const oldMap = new Map();
+  (oldArr||[]).forEach(c => (c.items||[]).forEach(it => oldMap.set(it.id, it.imgData)));
+  return normalizeCompares(newArr).map(c => ({
+    ...c,
+    items:(c.items||[]).map(it => ({ ...it, imgData: it.imgData || oldMap.get(it.id) || '' }))
+  }));
+}
 
 /* ── 同步錯誤訊息說明 ── */
 /* 網路層錯誤（fetch 直接丟例外，拿不到 HTTP 狀態碼時） */
@@ -1001,7 +1251,7 @@ function jsonbinErrorHint(status, apiMsg){
 }
 document.getElementById('uploadBtn').addEventListener('click', async ()=>{
   const key=getKey(); if(!key) return;
-  const payload={budget,rows:stripImages(rows),wishes:stripImages(wishes),purchases};
+  const payload={budget,rows:stripImages(rows),wishes:stripImages(wishes),purchases,compares:stripCompareImages(compares)};
   setSyncStatus('loading','上傳中…');
   try {
     let res;
@@ -1019,7 +1269,7 @@ document.getElementById('uploadBtn').addEventListener('click', async ()=>{
       let d={}; try{ d=await res.json(); }catch(_){}
       if(!res.ok) throw new Error(jsonbinErrorHint(res.status, d.message));
     }
-    setSyncStatus('ok','上傳成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
+    setSyncStatus('ok','上傳成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'／比價'+compares.length+'）');
   } catch(e){
     const msg=friendlyNetworkError(e);
     setSyncStatus('err','上傳失敗（點「上傳」重試）');
@@ -1041,11 +1291,13 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
     rows=mergeLocalImages(rec.rows,rows); budget=parseFloat(rec.budget)||500000;
     if(Array.isArray(rec.wishes)) wishes=mergeLocalImages(rec.wishes,wishes);
     if(Array.isArray(rec.purchases)) purchases=rec.purchases;
+    if(Array.isArray(rec.compares)) compares=mergeLocalCompareImages(rec.compares,compares);
     document.getElementById('budgetInput').value=budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
     buildPurchaseTable(); persistPurchases();
-    setSyncStatus('ok','下載成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
+    buildCompare(); persistCompares();
+    setSyncStatus('ok','下載成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'／比價'+compares.length+'）');
     if(!Array.isArray(rec.purchases)) alert('提醒：這次下載的雲端資料裡沒有「已購買清單」。\n\n代表上次「上傳」的裝置是舊版本（已購清單是新功能）。請在有已購清單的裝置上重新整理頁面到最新版後，再按一次「上傳」。');
   } catch(e){
     const msg=friendlyNetworkError(e);
@@ -1087,7 +1339,7 @@ function gsErrorHint(e, status){
 }
 document.getElementById('gsUploadBtn').addEventListener('click', async () => {
   const url = getGsUrl(); if (!url) return;
-  const body = JSON.stringify({ budget, rows:stripImages(rows), wishes:stripImages(wishes), purchases });
+  const body = JSON.stringify({ budget, rows:stripImages(rows), wishes:stripImages(wishes), purchases, compares:stripCompareImages(compares) });
   setGsSyncStatus('loading', '上傳中…');
   try {
     const res = await fetch(url, {
@@ -1100,7 +1352,7 @@ document.getElementById('gsUploadBtn').addEventListener('click', async () => {
     const text = await res.text();
     let d; try { d = JSON.parse(text); } catch { d = {}; }
     if (d.ok === false) throw new Error('Apps Script 回報錯誤：'+(d.error||'伺服器錯誤')+'\n\n請確認貼入的程式碼與本頁提供的一致。');
-    setGsSyncStatus('ok', '上傳成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
+    setGsSyncStatus('ok', '上傳成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'／比價'+compares.length+'）');
   } catch (e) {
     setGsSyncStatus('err', '上傳失敗（點「上傳至 Sheets」重試）');
     alert('Google Sheets 上傳失敗\n\n' + gsErrorHint(e, e.httpStatus));
@@ -1119,11 +1371,13 @@ document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
     rows = mergeLocalImages(rec.rows,rows); budget = parseFloat(rec.budget) || 500000;
     if (Array.isArray(rec.wishes)) wishes = mergeLocalImages(rec.wishes,wishes);
     if (Array.isArray(rec.purchases)) purchases = rec.purchases;
+    if (Array.isArray(rec.compares)) compares = mergeLocalCompareImages(rec.compares,compares);
     document.getElementById('budgetInput').value = budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
     buildPurchaseTable(); persistPurchases();
-    setGsSyncStatus('ok', '下載成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'）');
+    buildCompare(); persistCompares();
+    setGsSyncStatus('ok', '下載成功（採購'+rows.length+'／許願'+wishes.length+'／已購'+purchases.length+'／比價'+compares.length+'）');
     if(!Array.isArray(rec.purchases)) alert('提醒：這次下載的雲端資料裡沒有「已購買清單」。\n\n代表上次「上傳至 Sheets」的裝置是舊版本（已購清單是新功能）。請在有已購清單的裝置上重新整理頁面到最新版後，再按一次「上傳至 Sheets」。');
   } catch (e) {
     setGsSyncStatus('err', '下載失敗（點「從 Sheets 下載」重試）');
@@ -1143,7 +1397,7 @@ updateGsBtns();
 
 /* ══ Export ══ */
 document.getElementById('exportBtn').addEventListener('click', async ()=>{
-  const data=JSON.stringify({budget,rows,wishes,purchases},null,2);
+  const data=JSON.stringify({budget,rows,wishes,purchases,compares},null,2);
   const fname='電器採購資料_'+new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')+'.json';
   const blob=new Blob([data],{type:'application/json'});
   if(navigator.canShare&&navigator.canShare({files:[new File([blob],fname,{type:'application/json'})]})){
@@ -1194,12 +1448,14 @@ document.getElementById('importConfirmBtn').addEventListener('click',()=>{
   rows=pendingImport.rows; budget=parseFloat(pendingImport.budget)||500000;
   wishes=Array.isArray(pendingImport.wishes)?pendingImport.wishes:[];
   purchases=Array.isArray(pendingImport.purchases)?pendingImport.purchases:[];
+  compares=normalizeCompares(pendingImport.compares);
   document.getElementById('budgetInput').value=budget;
   buildTable(); updateTotals(); persist();
   buildWishTable(); persistWishes();
   buildPurchaseTable(); persistPurchases();
+  buildCompare(); persistCompares();
   document.getElementById('importModal').classList.remove('open');
-  alert('匯入成功！\n採購 '+rows.length+' 筆、許願 '+wishes.length+' 筆、已購買清單 '+purchases.length+' 筆。'+(purchases.length?'':'\n\n（這個檔案裡沒有已購買清單，可能是舊版本匯出的檔案）'));
+  alert('匯入成功！\n採購 '+rows.length+' 筆、許願 '+wishes.length+' 筆、已購買清單 '+purchases.length+' 筆、比價 '+compares.length+' 組。'+(purchases.length?'':'\n\n（這個檔案裡沒有已購買清單，可能是舊版本匯出的檔案）'));
 });
 document.getElementById('fileInput').addEventListener('change',e=>readJsonFile(e.target.files[0]));
 const fd=document.getElementById('fileDrop');
@@ -1278,10 +1534,10 @@ function buildWishTable(){
         ${w.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${w.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-wid="${w.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(w.srcUrl)}
       </div></td>
       <td><input class="td-input" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
-      <td style="white-space:nowrap;">
+      <td><div class="row-actions">
         <button class="del-btn move-main-btn" data-wid="${w.id}" title="移至採購表" style="color:var(--teal);">${MOVE_UP_SVG}</button>
         <button class="del-btn" data-wid="${w.id}" title="刪除">${DSVG}</button>
-      </td>`;
+      </div></td>`;
     tbody.appendChild(tr);
     const ta=tr.querySelector('.name-ta');
     ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
@@ -1395,6 +1651,16 @@ let purchases = [];
 const newPurchase = () => ({ id:uid(), name:'', qty:1, price:'', deposit:'', note:'' });
 function persistPurchases(){ try{ localStorage.setItem('ar-purchases',JSON.stringify(purchases)); }catch(e){} }
 
+/* 已購買清單的三個總額：總價、已付、待付尾款 */
+function getPurchaseSums(){
+  let total=0, deposit=0;
+  purchases.forEach(p=>{
+    total   += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
+    deposit += parseFloat(p.deposit)||0;
+  });
+  return { total, deposit, remain: total-deposit };
+}
+
 function updatePurchaseTotals(){
   let total=0, deposit=0;
   purchases.forEach(p=>{
@@ -1417,6 +1683,41 @@ function updatePurchaseTotals(){
   document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
   document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
+  updateHero();
+}
+
+/* ══ 頁首大數字 ══
+   目前花費   ＝ 已購買清單的「已付訂金」總和（真的付出去的錢）
+   預計還要花 ＝ 待付尾款 ＋ 採購表裡還沒買的金額
+   「採購表還沒買的」＝ 採購合計 − 已購買清單總價（已購清單是從採購表帶入的，視為已處理掉的部分） */
+function updateHero(){
+  const ps      = getPurchaseSums();
+  const planned = getTotal();                              /* 採購表合計 */
+  const notYet  = Math.max(0, planned - ps.total);         /* 採購表尚未購買的部分 */
+  const toPay   = Math.max(0, ps.remain);                  /* 待付尾款 */
+  const willPay = toPay + notYet;
+  const grand   = ps.deposit + willPay;                    /* 預計總支出 */
+
+  const spentEl = document.getElementById('heroSpent');
+  spentEl.textContent = fmt(ps.deposit);
+  spentEl.className   = 'hero-val' + (ps.deposit>0?'':' zero');
+  document.getElementById('heroSpentSub').textContent =
+    ps.deposit>0
+      ? '已購買清單 '+purchases.length+' 筆的「已付訂金」總和'
+      : '還沒有付款紀錄，到下方「已購買清單」填入已付訂金';
+
+  const leftEl = document.getElementById('heroLeft');
+  leftEl.textContent = fmt(willPay);
+  leftEl.className   = 'hero-val' + (willPay>0?' amber':' zero');
+  document.getElementById('heroLeftSub').textContent =
+    '待付尾款 '+fmt(toPay)+'　＋　採購表還沒買 '+fmt(notYet);
+
+  document.getElementById('heroTotal').textContent  = fmt(grand);
+  document.getElementById('heroBudget').textContent = fmt(budget);
+  const diff = budget - grand;
+  const diffEl = document.getElementById('heroDiff');
+  diffEl.className   = diff>=0 ? 'ok' : 'over';
+  diffEl.innerHTML   = diff>=0 ? '預算還剩 <b>'+fmt(diff)+'</b>' : '超出預算 <b>'+fmt(-diff)+'</b>';
 }
 
 function buildPurchaseTable(){
@@ -1444,7 +1745,7 @@ function buildPurchaseTable(){
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
       <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep>0?fmt(remain):'—'}</div></td>
       <td><input class="td-input" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
-      <td><button class="del-btn" data-pid="${p.id}" title="刪除">${DSVG}</button></td>`;
+      <td><div class="row-actions"><button class="del-btn" data-pid="${p.id}" title="刪除">${DSVG}</button></div></td>`;
     tbody.appendChild(tr);
     const ta=tr.querySelector('.name-ta');
     ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
@@ -1489,6 +1790,307 @@ document.getElementById('addPurchaseBtn').addEventListener('click',()=>{
   const tas=document.querySelectorAll('#purchaseBody .name-ta');
   if(tas.length) tas[tas.length-1].focus();
 });
+
+/* ══ 比價表（逛街用：只比誰便宜，不計成本、不計總金額） ══ */
+let compares = [];
+const newCompareItem = () => ({ id:uid(), store:'', price:'', note:'', url:'', imgData:'' });
+const newCompare = () => ({ id:uid(), title:'', items:[newCompareItem(), newCompareItem()] });
+
+/* 舊資料／匯入資料的欄位補齊，避免缺欄位造成畫面壞掉 */
+function normalizeCompares(arr){
+  if(!Array.isArray(arr)) return [];
+  return arr.map(c=>({
+    id: c && c.id || uid(),
+    title: c && c.title || '',
+    items: Array.isArray(c && c.items) ? c.items.map(it=>({
+      id: it && it.id || uid(),
+      store: it && it.store || '',
+      price: it && it.price || '',
+      note:  it && it.note  || '',
+      url:   it && it.url   || '',
+      imgData: it && it.imgData || ''
+    })) : []
+  }));
+}
+
+/* 價格字串 → 數字；空白／0／非數字都視為「未填」 */
+const cmpPrice = v => {
+  const n = parseFloat(String(v==null?'':v).replace(/[，,\s]/g,''));
+  return isFinite(n) && n>0 ? n : null;
+};
+function findCmpGroup(cid){ return compares.find(c=>c.id===cid); }
+function findCmpItem(cid,iid){
+  const c=findCmpGroup(cid); if(!c) return null;
+  return (c.items||[]).find(it=>it.id===iid) || null;
+}
+function compareStats(c){
+  const nums=(c.items||[]).map(it=>cmpPrice(it.price)).filter(n=>n!==null);
+  if(!nums.length) return { min:null, max:null, count:0, bestName:'' };
+  const min=Math.min(...nums), max=Math.max(...nums);
+  const best=(c.items||[]).find(it=>cmpPrice(it.price)===min);
+  return { min, max, count:nums.length, bestName:(best&&best.store)||'' };
+}
+
+function persistCompares(){
+  try{ localStorage.setItem('ar-compares',JSON.stringify(compares)); }
+  catch(e){ alert('本機儲存空間不足，最新的變更（可能是照片）未能儲存。建議刪除部分比價照片。'); }
+}
+
+function cmpMediaHtml(c,it){
+  const inner =
+    (it.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${it.imgData}" alt="比價照片" /><button type="button" class="img-remove-btn cmp-img-remove" data-cid="${c.id}" data-iid="${it.id}" title="移除照片">✕</button></div>`:'')
+    + (it.url?`<a class="src-link" href="${esc(it.url)}" target="_blank" rel="noopener">${LSVG} 開啟連結</a>`:'');
+  return inner ? `<div class="cmp-media">${inner}</div>` : '';
+}
+function cmpItemHtml(c,it){
+  return `
+    <div class="cmp-item${it.url?' show-url':''}" data-cid="${c.id}" data-iid="${it.id}">
+      <div class="cmp-rank"></div>
+      <input class="cmp-store" placeholder="店家 / 通路，例：全國電子" data-cid="${c.id}" data-iid="${it.id}" data-if="store" value="${esc(it.store)}" />
+      <div class="cmp-price-box">
+        <div class="cmp-price-inner">
+          <span class="cmp-cur">NT$</span>
+          <input class="cmp-price calc-input" type="text" inputmode="decimal" placeholder="0" title="可輸入算式，例如 18900-500，按 Enter 或點到別處即算出" data-cid="${c.id}" data-iid="${it.id}" data-if="price" value="${esc(it.price)}" />
+        </div>
+        <div class="cmp-badge none">—</div>
+      </div>
+      <button type="button" class="del-btn cmp-del cmp-del-item" data-cid="${c.id}" data-iid="${it.id}" title="刪除這家">${DSVG}</button>
+      <div class="cmp-detail">
+        <input class="cmp-sub cmp-note" placeholder="型號 / 規格 / 贈品…" data-cid="${c.id}" data-iid="${it.id}" data-if="note" value="${esc(it.note)}" />
+        <div class="img-btn-row">
+          <label class="img-upload-btn">📷 照片<input type="file" accept="image/*" class="cmp-img-input" data-cid="${c.id}" data-iid="${it.id}" hidden /></label>
+          <button type="button" class="img-upload-btn img-paste-btn cmp-paste-btn" data-cid="${c.id}" data-iid="${it.id}" title="從剪貼簿貼上圖片">📋 貼上</button>
+          <button type="button" class="img-upload-btn cmp-url-btn" data-cid="${c.id}" data-iid="${it.id}" title="填寫商品連結">🔗 連結</button>
+        </div>
+        <input class="cmp-sub cmp-url-inp" placeholder="https://…（選填）" data-cid="${c.id}" data-iid="${it.id}" data-if="url" value="${esc(it.url)}" />
+        ${cmpMediaHtml(c,it)}
+      </div>
+    </div>`;
+}
+
+function cmpGroupHtml(c){
+  return `
+    <div class="cmp-group" data-cid="${c.id}">
+      <div class="cmp-group-head">
+        <input class="cmp-title-input" placeholder="商品名稱，例：55吋電視" data-cid="${c.id}" data-cf="title" value="${esc(c.title)}" />
+        <div class="cmp-meta"></div>
+        <div class="cmp-head-btns">
+          <button type="button" class="icon-btn cmp-sort-btn" data-cid="${c.id}" title="依價格由低到高重新排列">⇅ 排序</button>
+          <button type="button" class="icon-btn danger cmp-del-group" data-cid="${c.id}" title="刪除整個比價商品">✕ 刪除</button>
+        </div>
+      </div>
+      <div class="cmp-items">${(c.items||[]).map(it=>cmpItemHtml(c,it)).join('')}</div>
+      <div class="cmp-add-row">
+        <button type="button" class="btn ghost cmp-add-item" data-cid="${c.id}">＋ 新增一家店</button>
+      </div>
+    </div>`;
+}
+
+const CMP_EMPTY_HTML = `
+  <div class="cmp-group"><div class="cmp-empty">
+    <span class="cmp-empty-icon">⚖️</span>
+    還沒有比價商品。<br>
+    按右上角「新增比價商品」，把同一件東西在各家看到的價格記下來，馬上知道哪家最便宜。
+  </div></div>`;
+
+function buildCompare(){
+  const host=document.getElementById('compareList');
+  if(!compares.length){ host.innerHTML=CMP_EMPTY_HTML; return; }
+  host.innerHTML=compares.map(cmpGroupHtml).join('');
+  compares.forEach(c=>updateCompareGroup(c.id));
+}
+
+/* 只更新名次／最低價標記，不重建 DOM（打字時不會失焦） */
+function updateCompareGroup(cid){
+  const c=findCmpGroup(cid); if(!c) return;
+  const groupEl=document.querySelector('.cmp-group[data-cid="'+cid+'"]'); if(!groupEl) return;
+  const st=compareStats(c);
+
+  const meta=groupEl.querySelector('.cmp-meta');
+  if(meta){
+    if(!st.count) meta.innerHTML='<span style="color:var(--text3);">填入價格後自動比較</span>';
+    else meta.innerHTML='最低 <b>'+fmt(st.min)+'</b>'
+      + (st.bestName?' · '+esc(st.bestName):'')
+      + ' · 已比 '+st.count+' 家'
+      + (st.max>st.min?' <span class="save-tag">最多省 '+fmt(st.max-st.min)+'</span>':'');
+  }
+
+  /* 名次：同價同名次 */
+  const sorted=(c.items||[]).map(it=>({id:it.id,p:cmpPrice(it.price)})).filter(x=>x.p!==null).sort((a,b)=>a.p-b.p);
+  const rankMap=new Map(); let rank=0, prev=null;
+  sorted.forEach((x,i)=>{ if(prev===null||x.p!==prev){ rank=i+1; prev=x.p; } rankMap.set(x.id,rank); });
+
+  (c.items||[]).forEach(it=>{
+    const row=groupEl.querySelector('.cmp-item[data-iid="'+it.id+'"]'); if(!row) return;
+    const p=cmpPrice(it.price);
+    const isBest=p!==null && p===st.min;
+    row.classList.toggle('best', isBest);
+    const rk=row.querySelector('.cmp-rank');
+    if(rk) rk.textContent = p===null ? '–' : String(rankMap.get(it.id));
+    const bd=row.querySelector('.cmp-badge');
+    if(bd){
+      if(p===null){ bd.className='cmp-badge none'; bd.textContent='未填價格'; }
+      else if(isBest){ bd.className='cmp-badge win'; bd.textContent = st.count>1 ? '🏆 最便宜' : '目前最低'; }
+      else { bd.className='cmp-badge diff'; bd.textContent = '貴 '+fmt(p-st.min); }
+    }
+  });
+}
+
+/* 只重畫單列的照片／連結區塊。
+   若在 blur 時整表重建，會讓「造成失焦的那一次點擊」（例如按刪除、按新增）失效。 */
+function refreshCmpMedia(cid,iid){
+  const row=document.querySelector('.cmp-item[data-iid="'+iid+'"]'); if(!row) return;
+  const c=findCmpGroup(cid), it=findCmpItem(cid,iid); if(!c||!it) return;
+  const detail=row.querySelector('.cmp-detail'); if(!detail) return;
+  const old=detail.querySelector('.cmp-media'); if(old) old.remove();
+  const html=cmpMediaHtml(c,it);
+  if(html) detail.insertAdjacentHTML('beforeend', html);
+}
+
+const compareList=document.getElementById('compareList');
+function applyCmpFieldEdit(el){
+  if(!el||!el.dataset||!el.dataset.cid) return false;
+  if(el.dataset.cf==='title'){
+    const c=findCmpGroup(el.dataset.cid); if(!c) return false;
+    c.title=el.value; return true;
+  }
+  if(el.dataset.if && el.dataset.iid){
+    const it=findCmpItem(el.dataset.cid,el.dataset.iid); if(!it) return false;
+    it[el.dataset.if]=el.value; return true;
+  }
+  return false;
+}
+compareList.addEventListener('input',e=>{
+  if(e.isComposing) return;
+  if(!applyCmpFieldEdit(e.target)) return;
+  updateCompareGroup(e.target.dataset.cid); persistCompares();
+});
+compareList.addEventListener('compositionend',e=>{
+  if(!applyCmpFieldEdit(e.target)) return;
+  updateCompareGroup(e.target.dataset.cid); persistCompares();
+});
+compareList.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.classList.contains('cmp-img-input')){
+    const file=el.files&&el.files[0];
+    const it0={cid:el.dataset.cid, iid:el.dataset.iid};
+    const it=findCmpItem(it0.cid,it0.iid); if(!it||!file) return;
+    readImageAsDataUrl(file).then(dataUrl=>{ it.imgData=dataUrl; refreshCmpMedia(it0.cid,it0.iid); persistCompares(); })
+      .catch(err=>alert('照片上傳失敗：'+err.message));
+    return;
+  }
+  /* 網址填完（離開欄位）才重畫，讓「開啟連結」出現 */
+  if(el.dataset && el.dataset.if==='url'){ applyCmpFieldEdit(el); refreshCmpMedia(el.dataset.cid,el.dataset.iid); persistCompares(); }
+});
+compareList.addEventListener('paste',e=>{
+  const el=e.target;
+  if(!el.dataset||!el.dataset.iid) return;
+  const dt=e.clipboardData||window.clipboardData; if(!dt) return;
+  const file=findImageFileFromDataTransferItems(dt.items); if(!file) return;
+  e.preventDefault();
+  const it=findCmpItem(el.dataset.cid,el.dataset.iid); if(!it) return;
+  readImageAsDataUrl(file).then(dataUrl=>{ it.imgData=dataUrl; refreshCmpMedia(el.dataset.cid,el.dataset.iid); persistCompares(); })
+    .catch(err=>alert('照片貼上失敗：'+err.message));
+});
+compareList.addEventListener('click',e=>{
+  /* 放大預覽 */
+  if(e.target.classList.contains('src-thumb')){ openImagePreview(e.target.src); return; }
+  /* 移除照片 */
+  const rmImg=e.target.closest('.cmp-img-remove');
+  if(rmImg){
+    const it=findCmpItem(rmImg.dataset.cid,rmImg.dataset.iid); if(!it) return;
+    it.imgData=''; refreshCmpMedia(rmImg.dataset.cid,rmImg.dataset.iid); persistCompares(); return;
+  }
+  /* 顯示／隱藏連結欄位 */
+  const urlBtn=e.target.closest('.cmp-url-btn');
+  if(urlBtn){
+    const row=urlBtn.closest('.cmp-item'); if(!row) return;
+    const shown=row.classList.toggle('show-url');
+    const inp=row.querySelector('.cmp-url-inp');
+    if(shown && inp) inp.focus();
+    return;
+  }
+  /* 剪貼簿貼上照片 */
+  const pasteBtn=e.target.closest('.cmp-paste-btn');
+  if(pasteBtn){
+    const it=findCmpItem(pasteBtn.dataset.cid,pasteBtn.dataset.iid); if(!it) return;
+    findImageFileFromClipboard().then(readImageAsDataUrl)
+      .then(dataUrl=>{ it.imgData=dataUrl; refreshCmpMedia(pasteBtn.dataset.cid,pasteBtn.dataset.iid); persistCompares(); })
+      .catch(err=>alert(err.message));
+    return;
+  }
+  /* 依價格排序 */
+  const sortBtn=e.target.closest('.cmp-sort-btn');
+  if(sortBtn){
+    const c=findCmpGroup(sortBtn.dataset.cid); if(!c) return;
+    c.items=(c.items||[]).slice().sort((a,b)=>{
+      const pa=cmpPrice(a.price), pb=cmpPrice(b.price);
+      if(pa===null&&pb===null) return 0;
+      if(pa===null) return 1;
+      if(pb===null) return -1;
+      return pa-pb;
+    });
+    buildCompare(); persistCompares(); return;
+  }
+  /* 新增一家店 */
+  const addItem=e.target.closest('.cmp-add-item');
+  if(addItem){
+    const c=findCmpGroup(addItem.dataset.cid); if(!c) return;
+    if(!Array.isArray(c.items)) c.items=[];
+    c.items.push(newCompareItem());
+    buildCompare(); persistCompares();
+    const inputs=document.querySelectorAll('.cmp-group[data-cid="'+c.id+'"] .cmp-store');
+    if(inputs.length) inputs[inputs.length-1].focus();
+    return;
+  }
+  /* 刪除某一家 */
+  const delItem=e.target.closest('.cmp-del-item');
+  if(delItem){
+    const c=findCmpGroup(delItem.dataset.cid); if(!c) return;
+    const it=findCmpItem(delItem.dataset.cid,delItem.dataset.iid); if(!it) return;
+    const hasData=it.store||it.price||it.note||it.url||it.imgData;
+    if(hasData && !confirm('確定刪除「'+(it.store||'這家店')+'」的報價嗎？')) return;
+    c.items=(c.items||[]).filter(x=>x.id!==it.id);
+    buildCompare(); persistCompares(); return;
+  }
+  /* 刪除整組比價 */
+  const delGroup=e.target.closest('.cmp-del-group');
+  if(delGroup){
+    const c=findCmpGroup(delGroup.dataset.cid); if(!c) return;
+    if(!confirm('確定刪除「'+(c.title||'這個比價商品')+'」以及底下所有店家報價嗎？')) return;
+    compares=compares.filter(x=>x.id!==c.id);
+    buildCompare(); persistCompares(); return;
+  }
+});
+document.getElementById('addCompareBtn').addEventListener('click',()=>{
+  const c=newCompare();
+  compares.push(c);
+  buildCompare(); persistCompares();
+  const el=document.querySelector('.cmp-group[data-cid="'+c.id+'"] .cmp-title-input');
+  if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); el.focus(); }
+});
+
+/* ══ 區塊快速導覽 + 回頂端 ══ */
+(function(){
+  const nav=document.getElementById('quickNav');
+  const links=Array.from(nav.querySelectorAll('.qn-item'));
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')))
+                  .filter(Boolean)
+                  .sort((a,b)=>a.getBoundingClientRect().top-b.getBoundingClientRect().top);
+  const toTop=document.getElementById('toTopBtn');
+  let ticking=false;
+  function sync(){
+    ticking=false;
+    let cur=null;
+    secs.forEach(s=>{ if(s.getBoundingClientRect().top<=100) cur=s; });
+    links.forEach(a=>a.classList.toggle('active', !!cur && a.getAttribute('href')==='#'+cur.id));
+    toTop.classList.toggle('show', window.scrollY>520);
+  }
+  window.addEventListener('scroll',()=>{ if(!ticking){ ticking=true; requestAnimationFrame(sync); } },{passive:true});
+  window.addEventListener('resize',sync,{passive:true});
+  toTop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+  sync();
+})();
 
 /* ══ 初始化：從 localStorage 讀取本機資料 ══ */
 load();
