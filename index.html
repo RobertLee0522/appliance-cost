@@ -211,6 +211,8 @@
   .tf-total { padding:11px 12px; font-size:16px; font-weight:700; color:var(--text); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
 
   .bottom-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .extra-tag { display:inline-block; margin:0 12px 7px; font-size:10.5px; font-weight:600; color:var(--amber-dark); background:var(--amber-light); border:0.5px solid color-mix(in srgb, var(--amber) 30%, transparent); border-radius:999px; padding:2px 8px; cursor:help; }
+  .extra-tag.hide { display:none; }
 
   /* ══ 比價表 ══ */
   .cmp-list { display:flex; flex-direction:column; gap:12px; }
@@ -482,8 +484,8 @@
   <!-- Metrics 採購 -->
   <div class="metrics">
     <div class="card metric-card"><div class="metric-icon">💰</div><div class="metric-label">採購預算</div><div class="metric-val" id="mBudget">NT$500,000</div></div>
-    <div class="card metric-card"><div class="metric-icon">🛍️</div><div class="metric-label">採購已用</div><div class="metric-val" id="mSpent">NT$0</div></div>
-    <div class="card metric-card"><div class="metric-icon">✅</div><div class="metric-label">採購剩餘</div><div class="metric-val safe" id="mRemain">NT$500,000</div></div>
+    <div class="card metric-card"><div class="metric-icon">🛍️</div><div class="metric-label">採購表合計</div><div class="metric-val" id="mSpent">NT$0</div></div>
+    <div class="card metric-card"><div class="metric-icon">✅</div><div class="metric-label">採購表剩餘（不含額外支出）</div><div class="metric-val safe" id="mRemain">NT$500,000</div></div>
   </div>
 
   <!-- Metrics 年費 -->
@@ -559,7 +561,7 @@
           <td colspan="2"></td>
         </tr>
         <tr style="background:var(--teal-light);">
-          <td colspan="4"><div class="tf-label" style="color:var(--teal-dark);">採購剩餘預算</div></td>
+          <td colspan="4"><div class="tf-label" style="color:var(--teal-dark);">採購表剩餘預算</div></td>
           <td><div class="tf-total" id="remainCell" style="color:var(--teal-dark);">NT$0</div></td>
           <td colspan="3"></td>
         </tr>
@@ -631,7 +633,7 @@
             已購買清單
             <span class="chip teal">訂金／尾款追蹤</span>
           </div>
-          <div class="sect-sub">記錄已下訂或已購買的項目。可從上方採購表按「✅」自動帶入，不用重打。</div>
+          <div class="sect-sub">記錄已下訂或已購買的項目。可從上方採購表按「✅」自動帶入，不用重打。<span id="purchaseExtraNote"></span></div>
         </div>
       </div>
       <div class="sect-actions">
@@ -823,7 +825,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.7';
+const APP_VERSION = 'v2.8';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -985,7 +987,7 @@ function updateTotals() {
   const bar=document.getElementById('progressBar');
   bar.style.width=pct.toFixed(1)+'%';
   bar.className='progress-fill'+(pct>=100?' over':pct>=80?' warn':'');
-  document.getElementById('pctLeft').textContent  = '使用 '+Math.round(pct)+'%';
+  document.getElementById('pctLeft').textContent  = '採購表使用預算 '+Math.round(pct)+'%';
   document.getElementById('pctRight').textContent = remain>=0?'剩餘 '+Math.round(100-pct)+'%':'超出預算';
 
   document.getElementById('totalCell').textContent       = fmt(total);
@@ -1109,7 +1111,7 @@ tbody.addEventListener('click',e=>{
   const copyPurchaseBtn=e.target.closest('.copy-purchase-btn');
   if(copyPurchaseBtn){
     const row=rows.find(r=>r.id===copyPurchaseBtn.dataset.id); if(!row)return;
-    purchases.push({ id:uid(), name:row.name, qty:row.qty||1, price:row.price, deposit:'', note:'' });
+    purchases.push({ id:uid(), fromId:row.id, name:row.name, qty:row.qty||1, price:row.price, deposit:'', note:'' });
     buildPurchaseTable(); persistPurchases();
     const tas=document.querySelectorAll('#purchaseBody input[data-pf="deposit"]');
     if(tas.length){ tas[tas.length-1].focus(); tas[tas.length-1].scrollIntoView({block:'center',behavior:'smooth'}); }
@@ -1683,38 +1685,96 @@ function updatePurchaseTotals(){
   document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
   document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
+
+  /* 標示／取消標示「採購表外」 */
+  let extra=0, extraCount=0;
+  purchases.forEach(p=>{
+    const isExtra=isExtraPurchase(p);
+    if(isExtra){ extra+=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0); extraCount++; }
+    const tag=document.querySelector('.extra-tag[data-pid="'+p.id+'"]');
+    if(tag) tag.classList.toggle('hide', !isExtra);
+  });
+  const note=document.getElementById('purchaseExtraNote');
+  if(note) note.innerHTML = extraCount
+    ? '<br><span style="color:var(--amber-dark);font-weight:600;">其中 '+extraCount+' 筆採購表沒有（額外支出 '+fmt(extra)+'），已計入上方總花費。</span>'
+    : '';
+
   updateHero();
+}
+
+/* ══ 全部支出的拆解 ══
+   已購買清單可能包含採購表沒有的項目（例如契稅、驗屋這類臨時支出），
+   所以「採購表還沒買的」必須逐筆比對，不能用「採購合計 − 已購總價」相減，
+   否則額外支出會把採購表裡還沒買的項目抵銷掉，總花費會少算。
+
+   配對方式：優先用 fromId（從採購表按「✅」帶入時記錄的來源），
+   舊資料沒有 fromId 就退回用名稱比對。 */
+const normName = s => String(s==null?'':s).replace(/\s+/g,'').toLowerCase();
+
+function getSpendBreakdown(){
+  const boughtIds=new Set(), boughtNames=new Set();
+  let boughtTotal=0, paid=0;
+  purchases.forEach(p=>{
+    boughtTotal += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
+    paid        += parseFloat(p.deposit)||0;
+    if(p.fromId) boughtIds.add(p.fromId);
+    const k=normName(p.name); if(k) boughtNames.add(k);
+  });
+
+  let notYet=0, notYetCount=0;
+  rows.forEach(r=>{
+    if(boughtIds.has(r.id)) return;                 /* 已帶入已購清單，改以實際成交價計算 */
+    const k=normName(r.name);
+    if(k && boughtNames.has(k)) return;
+    const sub=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0);
+    if(sub>0){ notYet+=sub; notYetCount++; }
+  });
+
+  /* 已購清單裡採購表沒有的項目（額外支出），只用來提示，不影響上面的加總 */
+  let extra=0, extraCount=0;
+  purchases.forEach(p=>{
+    if(!isExtraPurchase(p)) return;
+    extra += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
+    extraCount++;
+  });
+
+  const toPay = Math.max(0, boughtTotal-paid);
+  return { paid, boughtTotal, toPay, notYet, notYetCount, extra, extraCount,
+           willPay: toPay+notYet, grand: paid+toPay+notYet };
+}
+
+/* 這筆已購項目在採購成本表裡找不到對應 → 屬於額外支出 */
+function isExtraPurchase(p){
+  if(p.fromId && rows.some(r=>r.id===p.fromId)) return false;
+  const k=normName(p.name);
+  if(!k) return false;
+  return !rows.some(r=>normName(r.name)===k);
 }
 
 /* ══ 頁首大數字 ══
    目前花費   ＝ 已購買清單的「已付訂金」總和（真的付出去的錢）
-   預計還要花 ＝ 待付尾款 ＋ 採購表裡還沒買的金額
-   「採購表還沒買的」＝ 採購合計 − 已購買清單總價（已購清單是從採購表帶入的，視為已處理掉的部分） */
+   預計還要花 ＝ 待付尾款 ＋ 採購表裡還沒買的項目金額 */
 function updateHero(){
-  const ps      = getPurchaseSums();
-  const planned = getTotal();                              /* 採購表合計 */
-  const notYet  = Math.max(0, planned - ps.total);         /* 採購表尚未購買的部分 */
-  const toPay   = Math.max(0, ps.remain);                  /* 待付尾款 */
-  const willPay = toPay + notYet;
-  const grand   = ps.deposit + willPay;                    /* 預計總支出 */
+  const s = getSpendBreakdown();
 
   const spentEl = document.getElementById('heroSpent');
-  spentEl.textContent = fmt(ps.deposit);
-  spentEl.className   = 'hero-val' + (ps.deposit>0?'':' zero');
+  spentEl.textContent = fmt(s.paid);
+  spentEl.className   = 'hero-val' + (s.paid>0?'':' zero');
   document.getElementById('heroSpentSub').textContent =
-    ps.deposit>0
+    s.paid>0
       ? '已購買清單 '+purchases.length+' 筆的「已付訂金」總和'
+        + (s.extraCount?'（含採購表外 '+s.extraCount+' 筆）':'')
       : '還沒有付款紀錄，到下方「已購買清單」填入已付訂金';
 
   const leftEl = document.getElementById('heroLeft');
-  leftEl.textContent = fmt(willPay);
-  leftEl.className   = 'hero-val' + (willPay>0?' amber':' zero');
+  leftEl.textContent = fmt(s.willPay);
+  leftEl.className   = 'hero-val' + (s.willPay>0?' amber':' zero');
   document.getElementById('heroLeftSub').textContent =
-    '待付尾款 '+fmt(toPay)+'　＋　採購表還沒買 '+fmt(notYet);
+    '待付尾款 '+fmt(s.toPay)+'　＋　採購表還沒買 '+s.notYetCount+' 筆 '+fmt(s.notYet);
 
-  document.getElementById('heroTotal').textContent  = fmt(grand);
+  document.getElementById('heroTotal').textContent  = fmt(s.grand);
   document.getElementById('heroBudget').textContent = fmt(budget);
-  const diff = budget - grand;
+  const diff = budget - s.grand;
   const diffEl = document.getElementById('heroDiff');
   diffEl.className   = diff>=0 ? 'ok' : 'over';
   diffEl.innerHTML   = diff>=0 ? '預算還剩 <b>'+fmt(diff)+'</b>' : '超出預算 <b>'+fmt(-diff)+'</b>';
@@ -1732,6 +1792,7 @@ function buildPurchaseTable(){
       <td><div class="td-num">${i+1}</div></td>
       <td style="min-width:160px;">
         <textarea class="name-ta" placeholder="例：冰箱、沙發" data-pid="${p.id}" data-pf="name" rows="1">${esc(p.name)}</textarea>
+        <div class="extra-tag${isExtraPurchase(p)?'':' hide'}" data-pid="${p.id}" title="採購成本表裡找不到同名項目，屬於額外支出（例如契稅、驗屋）">＋ 採購表外</div>
       </td>
       <td>
         <div class="qty-ctrl">
