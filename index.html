@@ -79,6 +79,21 @@
   .qn-item.active { color:#fff; background:linear-gradient(135deg,var(--teal2),var(--teal)); border-color:transparent; box-shadow:0 4px 12px -5px color-mix(in srgb, var(--teal) 65%, transparent); }
   .qn-spacer { flex:1 1 auto; }
 
+  /* hero：目前花費 / 預計還要花 */
+  .hero { padding:1.15rem 1.4rem 1.15rem; display:grid; grid-template-columns:1fr 1px 1fr; gap:0 1.5rem; position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; inset:0; height:3px; background:linear-gradient(90deg,var(--teal2),var(--teal) 45%,var(--amber)); }
+  .hero-cell { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .hero-label { font-size:12px; font-weight:600; color:var(--text2); letter-spacing:.2px; }
+  .hero-val { font-size:clamp(30px,5.6vw,50px); font-weight:800; line-height:1.02; letter-spacing:-1.6px; font-variant-numeric:tabular-nums; color:var(--teal); word-break:break-word; }
+  .hero-val.amber { color:var(--amber); }
+  .hero-val.zero  { color:var(--text3); }
+  .hero-sub { font-size:11.5px; color:var(--text3); line-height:1.55; }
+  .hero-div { background:var(--border); }
+  .hero-foot { grid-column:1/-1; margin-top:1rem; padding-top:.8rem; border-top:0.5px solid var(--border); display:flex; flex-wrap:wrap; gap:5px 18px; font-size:12px; color:var(--text2); }
+  .hero-foot b { color:var(--text); font-weight:700; font-variant-numeric:tabular-nums; }
+  .hero-foot .ok b   { color:var(--teal-dark); }
+  .hero-foot .over b { color:var(--red); }
+
   /* section shell */
   .sect-card { padding:1.25rem 1.4rem 1.35rem; scroll-margin-top:calc(var(--nav-h) + 12px); }
   .sect-head { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:1.05rem; }
@@ -311,6 +326,10 @@
   @media(max-width:600px){
     body { padding:1rem .7rem 3.5rem; }
     .wrap { gap:11px; }
+    .hero { grid-template-columns:1fr; padding:1rem 1rem 1.05rem; }
+    .hero-div { height:1px; margin:.9rem 0; }
+    .hero-val { font-size:clamp(30px,11.5vw,46px); letter-spacing:-1.2px; }
+    .hero-foot { margin-top:.9rem; gap:4px 14px; }
     .metrics { grid-template-columns:1fr 1fr; gap:9px; }
     .metrics .metric-card:last-child { grid-column:span 2; }
     .metric-card { padding:.85rem .95rem; }
@@ -405,6 +424,26 @@
       <a class="qn-item" href="#sec-sync">☁️ 同步設定</a>
     </div>
   </nav>
+
+  <!-- ══ 大數字：目前花費 / 預計還要花 ══ -->
+  <div class="card hero">
+    <div class="hero-cell">
+      <div class="hero-label">💸 目前花費（實際付出去的錢）</div>
+      <div class="hero-val" id="heroSpent">NT$0</div>
+      <div class="hero-sub" id="heroSpentSub">已購買清單的「已付訂金」總和</div>
+    </div>
+    <div class="hero-div"></div>
+    <div class="hero-cell">
+      <div class="hero-label">🧾 預計還要花</div>
+      <div class="hero-val amber" id="heroLeft">NT$0</div>
+      <div class="hero-sub" id="heroLeftSub">待付尾款 ＋ 採購表裡還沒買的</div>
+    </div>
+    <div class="hero-foot">
+      <span>預計總支出 <b id="heroTotal">NT$0</b></span>
+      <span>預算 <b id="heroBudget">NT$500,000</b></span>
+      <span id="heroDiff">預算還剩 <b>NT$500,000</b></span>
+    </div>
+  </div>
 
   <!-- ══ 比價表（逛街用，不列入任何金額計算） ══ -->
   <div class="card sect-card" id="sec-compare">
@@ -970,6 +1009,8 @@ function updateTotals() {
     const a=document.querySelector('.annual-cell[data-id="'+r.id+'"]');
     if(a) a.textContent=(parseFloat(r.annualCost)||0)>0?fmt(parseFloat(r.annualCost)):'—';
   });
+
+  updateHero();
 }
 
 const LSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
@@ -1610,6 +1651,16 @@ let purchases = [];
 const newPurchase = () => ({ id:uid(), name:'', qty:1, price:'', deposit:'', note:'' });
 function persistPurchases(){ try{ localStorage.setItem('ar-purchases',JSON.stringify(purchases)); }catch(e){} }
 
+/* 已購買清單的三個總額：總價、已付、待付尾款 */
+function getPurchaseSums(){
+  let total=0, deposit=0;
+  purchases.forEach(p=>{
+    total   += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
+    deposit += parseFloat(p.deposit)||0;
+  });
+  return { total, deposit, remain: total-deposit };
+}
+
 function updatePurchaseTotals(){
   let total=0, deposit=0;
   purchases.forEach(p=>{
@@ -1632,6 +1683,41 @@ function updatePurchaseTotals(){
   document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
   document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
+  updateHero();
+}
+
+/* ══ 頁首大數字 ══
+   目前花費   ＝ 已購買清單的「已付訂金」總和（真的付出去的錢）
+   預計還要花 ＝ 待付尾款 ＋ 採購表裡還沒買的金額
+   「採購表還沒買的」＝ 採購合計 − 已購買清單總價（已購清單是從採購表帶入的，視為已處理掉的部分） */
+function updateHero(){
+  const ps      = getPurchaseSums();
+  const planned = getTotal();                              /* 採購表合計 */
+  const notYet  = Math.max(0, planned - ps.total);         /* 採購表尚未購買的部分 */
+  const toPay   = Math.max(0, ps.remain);                  /* 待付尾款 */
+  const willPay = toPay + notYet;
+  const grand   = ps.deposit + willPay;                    /* 預計總支出 */
+
+  const spentEl = document.getElementById('heroSpent');
+  spentEl.textContent = fmt(ps.deposit);
+  spentEl.className   = 'hero-val' + (ps.deposit>0?'':' zero');
+  document.getElementById('heroSpentSub').textContent =
+    ps.deposit>0
+      ? '已購買清單 '+purchases.length+' 筆的「已付訂金」總和'
+      : '還沒有付款紀錄，到下方「已購買清單」填入已付訂金';
+
+  const leftEl = document.getElementById('heroLeft');
+  leftEl.textContent = fmt(willPay);
+  leftEl.className   = 'hero-val' + (willPay>0?' amber':' zero');
+  document.getElementById('heroLeftSub').textContent =
+    '待付尾款 '+fmt(toPay)+'　＋　採購表還沒買 '+fmt(notYet);
+
+  document.getElementById('heroTotal').textContent  = fmt(grand);
+  document.getElementById('heroBudget').textContent = fmt(budget);
+  const diff = budget - grand;
+  const diffEl = document.getElementById('heroDiff');
+  diffEl.className   = diff>=0 ? 'ok' : 'over';
+  diffEl.innerHTML   = diff>=0 ? '預算還剩 <b>'+fmt(diff)+'</b>' : '超出預算 <b>'+fmt(-diff)+'</b>';
 }
 
 function buildPurchaseTable(){
