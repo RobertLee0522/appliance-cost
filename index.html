@@ -780,7 +780,7 @@ function doPost(e) {
         </div>
         <div class="sync-row">
           <span class="sync-label">Web App URL</span>
-          <input class="sync-input" type="text" id="gsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" />
+          <input class="sync-input url-input" type="text" id="gsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" />
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <span class="sync-status idle" id="gsSyncStatus">尚未設定</span>
@@ -845,7 +845,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v2.9';
+const APP_VERSION = 'v3.0';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -854,6 +854,31 @@ let rows = [], budget = 500000, saveTimer = null;
 const fmt    = n => (n<0?'-':'') + 'NT$' + Math.round(Math.abs(n)).toLocaleString('zh-TW');
 const uid    = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const esc    = s => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+/* ── 網址欄位：從一整段分享文字裡只挑出網址 ──
+   例如 PChome／蝦皮的「我在…找到好東西了，快來看！<商品名>\n<網址>」，
+   整段貼進網址欄會讓連結壞掉，這裡只保留第一個 http(s) 網址。 */
+function extractUrl(text){
+  const m = String(text==null?'':text).match(/https?:\/\/[^\s<>"'「」『』（）()【】\[\]]+/);
+  if(!m) return null;
+  return m[0].replace(/[.,;:!?、，。；：！？]+$/,'');   /* 去掉黏在網址結尾的標點 */
+}
+/* 已經是乾淨網址就原樣保留；夾雜其他文字才擷取；完全沒有網址則不動它 */
+function tidyUrl(v){
+  const s = String(v==null?'':v);
+  if(!s.trim()) return s;
+  if(/^https?:\/\/\S+$/.test(s.trim())) return s.trim();
+  return extractUrl(s) || s;
+}
+/* 把既有資料裡「整段分享文字」的網址欄清乾淨，回傳修正筆數 */
+function cleanUrlFields(){
+  let n=0;
+  const fix=(o,k)=>{ const v=tidyUrl(o[k]); if(v!==o[k]){ o[k]=v; n++; } };
+  rows.forEach(r=>fix(r,'srcUrl'));
+  wishes.forEach(w=>fix(w,'srcUrl'));
+  compares.forEach(c=>(c.items||[]).forEach(it=>fix(it,'url')));
+  return n;
+}
 
 /* ── 金額欄位算式計算：輸入 8000+3216 按 Enter/離開即算出總金額 ── */
 function evalMathExpr(raw){
@@ -982,6 +1007,8 @@ function load() {
   if(!rows.length)     rows=[newRow(),newRow(),newRow()];
   if(!wishes.length)   wishes=[newWish()];
   if(!compares.length) compares=[newCompare()];
+  /* 舊資料裡整段貼進網址欄的分享文字，開頁時一次修好 */
+  if(cleanUrlFields()){ persist(); persistWishes(); persistCompares(); }
   document.getElementById('budgetInput').value = budget;
   buildTable(); updateTotals();
   buildWishTable();
@@ -1077,7 +1104,7 @@ function buildTable() {
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-id="${row.id}" data-field="annualCost" value="${esc(row.annualCost)}" style="color:var(--amber);" /></td>
       <td style="min-width:180px;"><div class="src-wrap">
         <input class="td-input" placeholder="來源名稱" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
-        <input class="td-input" placeholder="https://…（選填）" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
+        <input class="td-input url-input" placeholder="https://…（選填）" title="可以直接貼整段分享文字，會自動只留下網址" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${row.srcUrl?`<a class="src-link" href="${esc(row.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(row.srcLabel||row.srcUrl)}</a>`:''}
         <div class="img-btn-row">
           <label class="img-upload-btn">📷 上傳<input type="file" accept="image/*" class="img-upload-input" data-id="${row.id}" hidden /></label>
@@ -1306,6 +1333,7 @@ document.getElementById('downloadBtn').addEventListener('click', async ()=>{
     if(Array.isArray(rec.wishes)) wishes=mergeLocalImages(rec.wishes,wishes);
     if(Array.isArray(rec.purchases)) purchases=rec.purchases;
     if(Array.isArray(rec.compares)) compares=mergeLocalCompareImages(rec.compares,compares);
+    cleanUrlFields();
     document.getElementById('budgetInput').value=budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
@@ -1386,6 +1414,7 @@ document.getElementById('gsDownloadBtn').addEventListener('click', async () => {
     if (Array.isArray(rec.wishes)) wishes = mergeLocalImages(rec.wishes,wishes);
     if (Array.isArray(rec.purchases)) purchases = rec.purchases;
     if (Array.isArray(rec.compares)) compares = mergeLocalCompareImages(rec.compares,compares);
+    cleanUrlFields();
     document.getElementById('budgetInput').value = budget;
     buildTable(); updateTotals(); persist();
     buildWishTable(); persistWishes();
@@ -1463,6 +1492,7 @@ document.getElementById('importConfirmBtn').addEventListener('click',()=>{
   wishes=Array.isArray(pendingImport.wishes)?pendingImport.wishes:[];
   purchases=Array.isArray(pendingImport.purchases)?pendingImport.purchases:[];
   compares=normalizeCompares(pendingImport.compares);
+  cleanUrlFields();
   document.getElementById('budgetInput').value=budget;
   buildTable(); updateTotals(); persist();
   buildWishTable(); persistWishes();
@@ -1539,7 +1569,7 @@ function buildWishTable(){
       <td><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></td>
       <td style="min-width:180px;"><div class="src-wrap">
         <input class="td-input" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
-        <input class="td-input" placeholder="https://…" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
+        <input class="td-input url-input" placeholder="https://…" title="可以直接貼整段分享文字，會自動只留下網址" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${w.srcUrl?`<a class="src-link" href="${esc(w.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(w.srcLabel||w.srcUrl)}</a>`:''}
         <div class="img-btn-row">
           <label class="img-upload-btn">📷 上傳<input type="file" accept="image/*" class="img-upload-input" data-wid="${w.id}" hidden /></label>
@@ -1930,7 +1960,7 @@ function cmpItemHtml(c,it){
           <button type="button" class="img-upload-btn cmp-url-btn" data-cid="${c.id}" data-iid="${it.id}" title="填寫商品連結">🔗 連結</button>
           ${moveSelectHtml('cmp','data-cid="'+c.id+'" data-iid="'+it.id+'"')}
         </div>
-        <input class="cmp-sub cmp-url-inp" placeholder="https://…（選填）" data-cid="${c.id}" data-iid="${it.id}" data-if="url" value="${esc(it.url)}" />
+        <input class="cmp-sub cmp-url-inp url-input" placeholder="https://…（選填）" title="可以直接貼整段分享文字，會自動只留下網址" data-cid="${c.id}" data-iid="${it.id}" data-if="url" value="${esc(it.url)}" />
         ${cmpMediaHtml(c,it)}
       </div>
     </div>`;
@@ -2260,6 +2290,23 @@ document.addEventListener('change', e=>{
   sel.value='';                            /* 動作完就回到「移至…」 */
   if(!target) return;
   handleMove(sel.dataset.move, sel.dataset, target);
+});
+
+/* ══ 貼上整段分享文字到網址欄時，只留下網址 ══
+   各表自己的 paste 監聽只處理圖片（有圖片時會 preventDefault），這裡接手純文字。 */
+document.addEventListener('paste', e=>{
+  if(e.defaultPrevented) return;
+  const el=e.target;
+  if(!el || !el.classList || !el.classList.contains('url-input')) return;
+  const dt=e.clipboardData||window.clipboardData; if(!dt) return;
+  const text=dt.getData('text/plain');
+  if(!text || !/\s/.test(text.trim())) return;      /* 沒有空白＝本來就只有一段，照原樣貼 */
+  const url=extractUrl(text); if(!url) return;
+  e.preventDefault();
+  el.value=url;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true}));
+  toast('已自動只取網址');
 });
 
 /* ══ 區塊快速導覽 + 回頂端 ══ */
