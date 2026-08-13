@@ -402,7 +402,8 @@
   .gs-block-title svg { color:#0F9D58; }
   .gs-script-box { background:var(--bg3); border-radius:var(--radius); padding:8px 10px; font-size:11px; font-family:'SF Mono','Consolas','Menlo',monospace; color:var(--text); white-space:pre; overflow-x:auto; line-height:1.6; }
   /* 長字閱讀模式：點一下跑馬燈、再點一下編輯 */
-  .mq-field { scrollbar-width:none; }
+  .mq-field { scrollbar-width:none; text-overflow:ellipsis; }   /* 比價表欄位也跟採購表一樣顯示省略號 */
+  .mq-field.mq-on { text-overflow:clip; }                        /* 跑馬燈時不要蓋住捲動中的字 */
   .mq-field::-webkit-scrollbar { display:none; }
   .mq-field.mq-clip { cursor:pointer; }
   .mq-field.mq-on, .td-input.mq-on:focus, .cmp-store.mq-on:focus, .cmp-sub.mq-on:focus, .cmp-title-input.mq-on:focus {
