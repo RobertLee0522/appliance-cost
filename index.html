@@ -400,6 +400,16 @@
   .gs-block-title { font-size:12px; font-weight:600; color:var(--text2); display:flex; align-items:center; gap:6px; }
   .gs-block-title svg { color:#0F9D58; }
   .gs-script-box { background:var(--bg3); border-radius:var(--radius); padding:8px 10px; font-size:11px; font-family:'SF Mono','Consolas','Menlo',monospace; color:var(--text); white-space:pre; overflow-x:auto; line-height:1.6; }
+  /* 長字閱讀模式：點一下跑馬燈、再點一下編輯 */
+  .mq-field { scrollbar-width:none; }
+  .mq-field::-webkit-scrollbar { display:none; }
+  .mq-field.mq-clip { cursor:pointer; }
+  .mq-field.mq-on, .td-input.mq-on:focus, .cmp-store.mq-on:focus, .cmp-sub.mq-on:focus, .cmp-title-input.mq-on:focus {
+    background:var(--bg);
+    box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--amber) 55%, transparent);
+    caret-color:transparent;
+  }
+
   @media (prefers-reduced-motion:reduce){
     html { scroll-behavior:auto; }
     * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
@@ -845,7 +855,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v3.0';
+const APP_VERSION = 'v3.1';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1103,8 +1113,8 @@ function buildTable() {
       <td><div class="subtotal-cell" data-id="${row.id}">${sub>0?fmt(sub):'—'}</div></td>
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-id="${row.id}" data-field="annualCost" value="${esc(row.annualCost)}" style="color:var(--amber);" /></td>
       <td style="min-width:180px;"><div class="src-wrap">
-        <input class="td-input" placeholder="來源名稱" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
-        <input class="td-input url-input" placeholder="https://…（選填）" title="可以直接貼整段分享文字，會自動只留下網址" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
+        <input class="td-input mq-field" placeholder="來源名稱" data-id="${row.id}" data-field="srcLabel" value="${esc(row.srcLabel)}" style="font-size:13px;" />
+        <input class="td-input url-input mq-field" placeholder="https://…（選填）" data-id="${row.id}" data-field="srcUrl" value="${esc(row.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${row.srcUrl?`<a class="src-link" href="${esc(row.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(row.srcLabel||row.srcUrl)}</a>`:''}
         <div class="img-btn-row">
           <label class="img-upload-btn">📷 上傳<input type="file" accept="image/*" class="img-upload-input" data-id="${row.id}" hidden /></label>
@@ -1121,6 +1131,7 @@ function buildTable() {
     const ta=tr.querySelector('.name-ta');
     ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
   });
+  refreshMarquee();
 }
 
 const tbody=document.getElementById('tableBody');
@@ -1568,8 +1579,8 @@ function buildWishTable(){
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></td>
       <td><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></td>
       <td style="min-width:180px;"><div class="src-wrap">
-        <input class="td-input" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
-        <input class="td-input url-input" placeholder="https://…" title="可以直接貼整段分享文字，會自動只留下網址" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
+        <input class="td-input mq-field" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
+        <input class="td-input url-input mq-field" placeholder="https://…" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
         ${w.srcUrl?`<a class="src-link" href="${esc(w.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(w.srcLabel||w.srcUrl)}</a>`:''}
         <div class="img-btn-row">
           <label class="img-upload-btn">📷 上傳<input type="file" accept="image/*" class="img-upload-input" data-wid="${w.id}" hidden /></label>
@@ -1577,7 +1588,7 @@ function buildWishTable(){
         </div>
         ${w.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${w.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-wid="${w.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(w.srcUrl)}
       </div></td>
-      <td><input class="td-input" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
+      <td><input class="td-input mq-field" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
       <td><div class="row-actions">
         ${moveSelectHtml('wish','data-wid="'+w.id+'"')}
         <button class="del-btn" data-wid="${w.id}" title="刪除">${DSVG}</button>
@@ -1587,6 +1598,7 @@ function buildWishTable(){
     ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
   });
   updateWishTotal();
+  refreshMarquee();
 }
 
 function persistWishes(){ try{ localStorage.setItem('ar-wishes',JSON.stringify(wishes)); }catch(e){ alert('本機儲存空間不足，最新的變更（可能是圖片）未能儲存。建議改貼圖片網址，或刪除部分已上傳的圖片。'); } }
@@ -1838,7 +1850,7 @@ function buildPurchaseTable(){
       <td><div class="subtotal-cell" data-pid="${p.id}">${sub>0?fmt(sub):'—'}</div></td>
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
       <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep>0?fmt(remain):'—'}</div></td>
-      <td><input class="td-input" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
+      <td><input class="td-input mq-field" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
       <td><div class="row-actions">
         ${moveSelectHtml('purchase','data-pid="'+p.id+'"')}
         <button class="del-btn" data-pid="${p.id}" title="刪除">${DSVG}</button>
@@ -1848,6 +1860,7 @@ function buildPurchaseTable(){
     ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
   });
   updatePurchaseTotals();
+  refreshMarquee();
 }
 
 const purchaseBody=document.getElementById('purchaseBody');
@@ -1943,7 +1956,7 @@ function cmpItemHtml(c,it){
   return `
     <div class="cmp-item${it.url?' show-url':''}" data-cid="${c.id}" data-iid="${it.id}">
       <div class="cmp-rank"></div>
-      <input class="cmp-store" placeholder="店家 / 通路，例：全國電子" data-cid="${c.id}" data-iid="${it.id}" data-if="store" value="${esc(it.store)}" />
+      <input class="cmp-store mq-field" placeholder="店家 / 通路，例：全國電子" data-cid="${c.id}" data-iid="${it.id}" data-if="store" value="${esc(it.store)}" />
       <div class="cmp-price-box">
         <div class="cmp-price-inner">
           <span class="cmp-cur">NT$</span>
@@ -1953,14 +1966,14 @@ function cmpItemHtml(c,it){
       </div>
       <button type="button" class="del-btn cmp-del cmp-del-item" data-cid="${c.id}" data-iid="${it.id}" title="刪除這家">${DSVG}</button>
       <div class="cmp-detail">
-        <input class="cmp-sub cmp-note" placeholder="型號 / 規格 / 贈品…" data-cid="${c.id}" data-iid="${it.id}" data-if="note" value="${esc(it.note)}" />
+        <input class="cmp-sub cmp-note mq-field" placeholder="型號 / 規格 / 贈品…" data-cid="${c.id}" data-iid="${it.id}" data-if="note" value="${esc(it.note)}" />
         <div class="img-btn-row">
           <label class="img-upload-btn">📷 照片<input type="file" accept="image/*" class="cmp-img-input" data-cid="${c.id}" data-iid="${it.id}" hidden /></label>
           <button type="button" class="img-upload-btn img-paste-btn cmp-paste-btn" data-cid="${c.id}" data-iid="${it.id}" title="從剪貼簿貼上圖片">📋 貼上</button>
           <button type="button" class="img-upload-btn cmp-url-btn" data-cid="${c.id}" data-iid="${it.id}" title="填寫商品連結">🔗 連結</button>
           ${moveSelectHtml('cmp','data-cid="'+c.id+'" data-iid="'+it.id+'"')}
         </div>
-        <input class="cmp-sub cmp-url-inp url-input" placeholder="https://…（選填）" title="可以直接貼整段分享文字，會自動只留下網址" data-cid="${c.id}" data-iid="${it.id}" data-if="url" value="${esc(it.url)}" />
+        <input class="cmp-sub cmp-url-inp url-input mq-field" placeholder="https://…（選填）" data-cid="${c.id}" data-iid="${it.id}" data-if="url" value="${esc(it.url)}" />
         ${cmpMediaHtml(c,it)}
       </div>
     </div>`;
@@ -1970,7 +1983,7 @@ function cmpGroupHtml(c){
   return `
     <div class="cmp-group" data-cid="${c.id}">
       <div class="cmp-group-head">
-        <input class="cmp-title-input" placeholder="商品名稱，例：55吋電視" data-cid="${c.id}" data-cf="title" value="${esc(c.title)}" />
+        <input class="cmp-title-input mq-field" placeholder="商品名稱，例：55吋電視" data-cid="${c.id}" data-cf="title" value="${esc(c.title)}" />
         <div class="cmp-meta"></div>
         <div class="cmp-head-btns">
           <button type="button" class="icon-btn cmp-sort-btn" data-cid="${c.id}" title="依價格由低到高重新排列">⇅ 排序</button>
@@ -1996,6 +2009,7 @@ function buildCompare(){
   if(!compares.length){ host.innerHTML=CMP_EMPTY_HTML; return; }
   host.innerHTML=compares.map(cmpGroupHtml).join('');
   compares.forEach(c=>updateCompareGroup(c.id));
+  refreshMarquee();
 }
 
 /* 只更新名次／最低價標記，不重建 DOM（打字時不會失焦） */
@@ -2291,6 +2305,80 @@ document.addEventListener('change', e=>{
   if(!target) return;
   handleMove(sel.dataset.move, sel.dataset, target);
 });
+
+/* ══ 長字閱讀模式 ══
+   單行欄位的文字太長會被切掉。文字放不下時先把欄位鎖成唯讀：
+   點一下 → 文字左右來回捲動（跑馬燈）看完整內容；再點一下 → 解鎖編輯。
+   文字放得下的欄位維持原本行為，點一下就能編輯。 */
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isMqField = el => !!(el && el.classList && el.classList.contains('mq-field'));
+const mqOverflow = el => el.scrollWidth > el.clientWidth + 2;
+
+function stopMarquee(el){
+  if(el._mqRaf){ cancelAnimationFrame(el._mqRaf); el._mqRaf=null; }
+  el.classList.remove('mq-on');
+}
+function startMarquee(el){
+  stopMarquee(el);
+  const max = el.scrollWidth - el.clientWidth;
+  if(max <= 2) return;
+  el.classList.add('mq-on');
+  const SPEED=42, PAUSE=650;                       /* px/秒、兩端停頓 ms */
+  let dir=1, pos=0, last=performance.now(), waitUntil=last+260;   /* 一開始少停一點，點下去馬上看得到在動 */
+  const step = now => {
+    if(!el.isConnected || !el.readOnly || document.activeElement!==el){ stopMarquee(el); el.scrollLeft=0; return; }
+    const dt=Math.min(now-last,80); last=now;
+    if(now>=waitUntil){
+      pos += dir*SPEED*dt/1000;
+      if(pos>=max){ pos=max; dir=-1; waitUntil=now+PAUSE; }
+      else if(pos<=0){ pos=0; dir=1; waitUntil=now+PAUSE; }
+      el.scrollLeft=pos;
+    }
+    el._mqRaf=requestAnimationFrame(step);
+  };
+  el._mqRaf=requestAnimationFrame(step);
+}
+/* 重新判斷哪些欄位放不下（建表、改字、改視窗寬度後都要重算） */
+function refreshMarquee(){
+  if(reduceMotion) return;
+  document.querySelectorAll('.mq-field').forEach(el=>{
+    if(el===document.activeElement) return;        /* 正在用的欄位不動它 */
+    stopMarquee(el); el.scrollLeft=0;
+    const over=mqOverflow(el);
+    el.readOnly=over;
+    el.classList.toggle('mq-clip', over);
+    if(over) el.title=el.value+'\n（點一下看完整內容，再點一下編輯）';
+    else el.removeAttribute('title');
+  });
+}
+function unlockField(el){
+  stopMarquee(el); el.scrollLeft=0;
+  el.readOnly=false; el.classList.remove('mq-clip');
+  el.focus();
+  const n=el.value.length;
+  try{ el.setSelectionRange(n,n); }catch(_){}
+}
+/* 記住按下去的當下焦點在哪，用來分辨「第一次點」和「第二次點」 */
+let mqDownFocus=null;
+document.addEventListener('mousedown', ()=>{ mqDownFocus=document.activeElement; }, true);
+document.addEventListener('touchstart', ()=>{ mqDownFocus=document.activeElement; }, {capture:true, passive:true});
+document.addEventListener('click', e=>{
+  const el=e.target;
+  if(!isMqField(el) || !el.readOnly) return;
+  if(mqDownFocus===el) unlockField(el);            /* 已經在跑馬燈了 → 這是第二次點 */
+});
+document.addEventListener('keydown', e=>{
+  const el=e.target;
+  if(isMqField(el) && el.readOnly && (e.key==='Enter'||e.key==='F2')){ e.preventDefault(); unlockField(el); }
+});
+document.addEventListener('focusin', e=>{ if(isMqField(e.target) && e.target.readOnly) startMarquee(e.target); });
+document.addEventListener('focusout', e=>{
+  if(!isMqField(e.target)) return;
+  stopMarquee(e.target); e.target.scrollLeft=0;
+  setTimeout(refreshMarquee,0);
+});
+let mqResizeTimer=null;
+window.addEventListener('resize', ()=>{ clearTimeout(mqResizeTimer); mqResizeTimer=setTimeout(refreshMarquee,180); });
 
 /* ══ 貼上整段分享文字到網址欄時，只留下網址 ══
    各表自己的 paste 監聽只處理圖片（有圖片時會 preventDefault），這裡接手純文字。 */
