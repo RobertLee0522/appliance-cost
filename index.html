@@ -663,7 +663,7 @@
             已購買清單
             <span class="chip teal">訂金／尾款追蹤</span>
           </div>
-          <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。<span id="purchaseExtraNote"></span></div>
+          <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。退費／加收會自動連動剩餘尾款與總花費。<span id="purchaseExtraNote"></span></div>
         </div>
       </div>
       <div class="sect-actions">
@@ -686,7 +686,7 @@
       </div>
     </div>
     <div class="table-card table-inner">
-      <table style="min-width:950px;">
+      <table style="min-width:1220px;">
         <thead>
           <tr>
             <th style="width:36px;">#</th>
@@ -695,6 +695,8 @@
             <th style="width:110px;text-align:right;">單價（元）</th>
             <th style="width:110px;text-align:right;">總價</th>
             <th style="width:120px;text-align:right;">已付訂金（元）</th>
+            <th style="width:110px;text-align:right;">退費（元）</th>
+            <th style="width:110px;text-align:right;">加收（元）</th>
             <th style="width:120px;text-align:right;">剩餘尾款</th>
             <th style="min-width:100px;">備註</th>
             <th style="width:128px;"></th>
@@ -706,6 +708,8 @@
             <td colspan="4"><div class="tf-label">合計</div></td>
             <td><div class="tf-total" id="purchaseTotalCell" style="text-align:right;font-size:14px;">NT$0</div></td>
             <td><div class="tf-total" id="purchaseDepositCell" style="text-align:right;font-size:14px;color:var(--teal-dark);">NT$0</div></td>
+            <td><div class="tf-total" id="purchaseRefundCell" style="text-align:right;font-size:14px;color:var(--teal-dark);">NT$0</div></td>
+            <td><div class="tf-total" id="purchaseExtraChargeCell" style="text-align:right;font-size:14px;color:var(--red);">NT$0</div></td>
             <td><div class="tf-total" id="purchaseRemainCell" style="text-align:right;color:var(--amber);">NT$0</div></td>
             <td colspan="2"></td>
           </tr>
@@ -1697,38 +1701,47 @@ document.getElementById('addWishBtn').addEventListener('click',()=>{
 
 /* ══ 已購買清單（訂金／尾款追蹤） ══ */
 let purchases = [];
-const newPurchase = () => ({ id:uid(), name:'', qty:1, price:'', deposit:'', note:'' });
+const newPurchase = () => ({ id:uid(), name:'', qty:1, price:'', deposit:'', refund:'', extraCharge:'', note:'' });
 function persistPurchases(){ try{ localStorage.setItem('ar-purchases',JSON.stringify(purchases)); }catch(e){} }
 
-/* 已購買清單的三個總額：總價、已付、待付尾款 */
+/* 淨已付金額＝已付訂金－退費＋加收（廠商多收的費用），
+   退費會從已付訂金扣除，加收則會加上去，兩者都會連動剩餘尾款與總花費。 */
+function netPaid(p){
+  return (parseFloat(p.deposit)||0) - (parseFloat(p.refund)||0) + (parseFloat(p.extraCharge)||0);
+}
+
+/* 已購買清單的總額：總價、已付（淨）、待付尾款 */
 function getPurchaseSums(){
   let total=0, deposit=0;
   purchases.forEach(p=>{
     total   += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
-    deposit += parseFloat(p.deposit)||0;
+    deposit += netPaid(p);
   });
   return { total, deposit, remain: total-deposit };
 }
 
 function updatePurchaseTotals(){
-  let total=0, deposit=0;
+  let total=0, deposit=0, refund=0, extraCharge=0;
   purchases.forEach(p=>{
     const sub=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
-    const dep=parseFloat(p.deposit)||0;
+    const dep=netPaid(p);
     total+=sub; deposit+=dep;
+    refund+=parseFloat(p.refund)||0; extraCharge+=parseFloat(p.extraCharge)||0;
     const s=document.querySelector('.subtotal-cell[data-pid="'+p.id+'"]');
     if(s) s.textContent=sub>0?fmt(sub):'—';
     const rm=document.querySelector('.remain-cell[data-pid="'+p.id+'"]');
     if(rm){
       const remain=sub-dep;
-      rm.textContent=sub>0||dep>0?fmt(remain):'—';
+      rm.textContent=sub>0||dep!==0?fmt(remain):'—';
       rm.style.color=remain>0?'var(--amber)':'var(--teal-dark)';
     }
   });
   const remainAll=total-deposit;
-  document.getElementById('purchaseTotalCell').textContent   = fmt(total);
-  document.getElementById('purchaseDepositCell').textContent = fmt(deposit);
-  document.getElementById('purchaseRemainCell').textContent  = fmt(remainAll);
+  document.getElementById('purchaseTotalCell').textContent       = fmt(total);
+  document.getElementById('purchaseDepositCell').textContent     = fmt(deposit);
+  document.getElementById('purchaseRefundCell').textContent      = fmt(refund);
+  document.getElementById('purchaseExtraChargeCell').textContent = fmt(extraCharge);
+  document.getElementById('purchaseRemainCell').textContent      = fmt(remainAll);
   document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
   document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
@@ -1763,7 +1776,7 @@ function getSpendBreakdown(){
   let boughtTotal=0, paid=0;
   purchases.forEach(p=>{
     boughtTotal += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
-    paid        += parseFloat(p.deposit)||0;
+    paid        += netPaid(p);
     if(p.fromId) boughtIds.add(p.fromId);
     const k=normName(p.name); if(k) boughtNames.add(k);
   });
@@ -1799,7 +1812,7 @@ function isExtraPurchase(p){
 }
 
 /* ══ 頁首大數字 ══
-   目前花費   ＝ 已購買清單的「已付訂金」總和（真的付出去的錢）
+   目前花費   ＝ 已購買清單的「已付訂金－退費＋加收」淨總和（真的付出去的錢）
    預計還要花 ＝ 待付尾款 ＋ 採購表裡還沒買的項目金額 */
 function updateHero(){
   const s = getSpendBreakdown();
@@ -1809,7 +1822,7 @@ function updateHero(){
   spentEl.className   = 'hero-val' + (s.paid>0?'':' zero');
   document.getElementById('heroSpentSub').textContent =
     s.paid>0
-      ? '已購買清單 '+purchases.length+' 筆的「已付訂金」總和'
+      ? '已購買清單 '+purchases.length+' 筆的「已付訂金」淨總和（已計入退費／加收）'
         + (s.extraCount?'（含採購表外 '+s.extraCount+' 筆）':'')
       : '還沒有付款紀錄，到下方「已購買清單」填入已付訂金';
 
@@ -1832,7 +1845,7 @@ function buildPurchaseTable(){
   tbody.innerHTML='';
   purchases.forEach((p,i)=>{
     const sub=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
-    const dep=parseFloat(p.deposit)||0;
+    const dep=netPaid(p);
     const remain=sub-dep;
     const tr=document.createElement('tr');
     tr.innerHTML=`
@@ -1851,7 +1864,9 @@ function buildPurchaseTable(){
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="price" value="${esc(p.price)}" /></td>
       <td><div class="subtotal-cell" data-pid="${p.id}">${sub>0?fmt(sub):'—'}</div></td>
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
-      <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep>0?fmt(remain):'—'}</div></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商退還的金額，會從已付訂金扣除" data-pid="${p.id}" data-pf="refund" value="${esc(p.refund)}" style="color:var(--teal-dark);" /></td>
+      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商額外多收的金額，會加到已付訂金" data-pid="${p.id}" data-pf="extraCharge" value="${esc(p.extraCharge)}" style="color:var(--red);" /></td>
+      <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep!==0?fmt(remain):'—'}</div></td>
       <td><input class="td-input mq-field" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
       <td><div class="row-actions">
         ${moveSelectHtml('purchase','data-pid="'+p.id+'"')}
@@ -2221,7 +2236,7 @@ function handleMove(kind, ds, target){
       buildTable(); updateTotals(); persist(); buildWishTable(); persistWishes();
       toast('已移至許願表');
     } else if(target==='purchase'){
-      purchases.push({ id:uid(), fromId:r.id, name:r.name, qty:r.qty||1, price:r.price, deposit:'', note:'' });
+      purchases.push({ id:uid(), fromId:r.id, name:r.name, qty:r.qty||1, price:r.price, deposit:'', refund:'', extraCharge:'', note:'' });
       buildPurchaseTable(); persistPurchases();
       focusLastDeposit();
       toast('已帶入已購買清單，請填入已付訂金');
@@ -2242,7 +2257,7 @@ function handleMove(kind, ds, target){
       buildTable(); updateTotals(); persist(); buildWishTable(); persistWishes();
       toast('已移至採購表');
     } else if(target==='purchase'){
-      purchases.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, deposit:'', note:w.note||'' });
+      purchases.push({ id:uid(), name:w.name, qty:w.qty||1, price:w.price, deposit:'', refund:'', extraCharge:'', note:w.note||'' });
       buildPurchaseTable(); persistPurchases();
       focusLastDeposit();
       toast('已帶入已購買清單，請填入已付訂金');
@@ -2289,7 +2304,7 @@ function handleMove(kind, ds, target){
       buildWishTable(); persistWishes();
       toast('已帶入許願表');
     } else if(target==='purchase'){
-      purchases.push({ id:uid(), name, qty:1, price:it.price, deposit:'', note });
+      purchases.push({ id:uid(), name, qty:1, price:it.price, deposit:'', refund:'', extraCharge:'', note });
       buildPurchaseTable(); persistPurchases();
       focusLastDeposit();
       toast('已帶入已購買清單，請填入已付訂金');
