@@ -174,7 +174,7 @@
   .table-card::-webkit-scrollbar { height:8px; }
   .table-card::-webkit-scrollbar-thumb { background:var(--border2); border-radius:999px; }
   .table-inner { border:0.5px solid var(--border); border-radius:var(--radius); }
-  table { width:100%; border-collapse:collapse; min-width:620px; }
+  table { width:100%; border-collapse:collapse; min-width:780px; }
   thead { background:var(--bg2); }
   th { padding:11px 12px; font-size:11px; font-weight:600; color:var(--text2); text-align:left; white-space:nowrap; border-bottom:0.5px solid var(--border); letter-spacing:.3px; }
   td { padding:0; border-bottom:0.5px solid var(--border); vertical-align:middle; }
@@ -230,12 +230,35 @@
     background:var(--text); color:var(--bg); font-size:13px; font-weight:500; padding:10px 18px; border-radius:999px;
     box-shadow:var(--shadow-lg); opacity:0; pointer-events:none; transition:opacity .2s,transform .2s; }
   .toast.show { opacity:1; transform:translate(-50%,0); }
-  .extra-tag { display:inline-block; margin:0 12px 7px; font-size:10.5px; font-weight:600; color:var(--amber-dark); background:var(--amber-light); border:0.5px solid color-mix(in srgb, var(--amber) 30%, transparent); border-radius:999px; padding:2px 8px; cursor:help; }
-  .extra-tag.hide { display:none; }
 
   /* 購買／付款狀態標籤 */
   .tag-row { display:flex; flex-wrap:wrap; gap:4px; margin:0 12px 7px; }
-  .tag-row .extra-tag { margin:0; }
+  /* 採購表「購買狀態」欄 */
+  .buy-cell { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:8px 12px; }
+  .buy-cell:empty { padding:0; }
+  .buy-chip { font-size:12.5px; font-weight:700; border-radius:999px; padding:3px 11px; white-space:nowrap; }
+  .buy-chip.yes { color:#fff; background:linear-gradient(135deg,var(--teal2),var(--teal)); }
+  .buy-chip.no  { color:var(--text2); background:var(--bg3); border:0.5px solid var(--border2); }
+  .buy-pay { font-size:11px; font-weight:600; white-space:nowrap; }
+  .buy-pay.st-unpaid { color:var(--red); } .buy-pay.st-partial { color:var(--amber-dark); } .buy-pay.st-paid { color:var(--teal-dark); }
+  .buy-btn { border:none; background:none; padding:0; font-family:inherit; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .buy-btn:hover { text-decoration:underline; }
+  .buy-link { color:var(--indigo-dark); }
+  .buy-mark { color:var(--teal-dark); }
+  /* 已購買「對應採購表」下拉 */
+  .link-select {
+    -webkit-appearance:none; -moz-appearance:none; appearance:none; max-width:190px;
+    font-family:inherit; font-size:10.5px; font-weight:600; border-radius:999px; padding:2px 20px 2px 8px; cursor:pointer;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    color:var(--amber-dark); background-color:var(--amber-light); border:0.5px solid color-mix(in srgb, var(--amber) 30%, transparent);
+    background-image:var(--sel-arrow); background-repeat:no-repeat; background-position:right 6px center;
+  }
+  .link-select.linked { color:var(--indigo-dark); background-color:var(--indigo-light); border-color:color-mix(in srgb, var(--indigo) 30%, transparent); }
+  .link-select option { color:var(--text); background:var(--bg); font-size:13px; }
+  .link-jump { border:none; background:var(--indigo-light); color:var(--indigo-dark); border-radius:999px; width:20px; height:20px; font-size:11px; cursor:pointer; padding:0; }
+  .link-jump[hidden] { display:none; }
+  @keyframes rowflash { 0%,35% { background:color-mix(in srgb, var(--indigo) 22%, transparent); } 100% { background:transparent; } }
+  tbody tr.flash td { animation:rowflash 1.8s ease-out; }
   .st-tag { display:inline-flex; align-items:center; font-size:10.5px; font-weight:600; border-radius:999px; padding:2px 8px; border:0.5px solid transparent; color:var(--text2); background:var(--bg3); }
   .st-tag:empty { display:none; }
   .st-tag.st-unpaid  { color:var(--red); background:var(--red-light); border-color:color-mix(in srgb, var(--red) 30%, transparent); }
@@ -595,7 +618,7 @@
             採購成本表
             <span class="chip teal">列入預算</span>
           </div>
-          <div class="sect-sub">主力清單：數量、單價、每年花費都會計入上方的預算與統計。每一列會自動對照已購買清單，標出買了沒、付款到哪。</div>
+          <div class="sect-sub">主力清單：數量、單價、每年花費都會計入上方的預算與統計。「購買狀態」會對照已購買清單，標出已購／尚未購買和付款進度，點「↔ 已購買 #」可跳到對應那一列。</div>
           <div class="st-sum" id="rowStatusSum"></div>
         </div>
       </div>
@@ -612,6 +635,7 @@
         <tr>
           <th style="width:36px;">#</th>
           <th style="min-width:140px;">家電總類</th>
+          <th style="min-width:130px;">購買狀態</th>
           <th style="width:60px;text-align:right;">數量</th>
           <th style="width:110px;text-align:right;">單價（元）</th>
           <th style="width:110px;text-align:right;">採購小計</th>
@@ -623,18 +647,18 @@
       <tbody id="tableBody"></tbody>
       <tfoot>
         <tr>
-          <td colspan="4"><div class="tf-label">採購合計</div></td>
+          <td colspan="5"><div class="tf-label">採購合計</div></td>
           <td><div class="tf-total" id="totalCell">NT$0</div></td>
           <td colspan="3"></td>
         </tr>
         <tr>
-          <td colspan="4"><div class="tf-label" style="color:var(--amber);">每年花費合計</div></td>
+          <td colspan="5"><div class="tf-label" style="color:var(--amber);">每年花費合計</div></td>
           <td></td>
           <td><div class="tf-total" id="annualTotalCell" style="color:var(--amber);">NT$0</div></td>
           <td colspan="2"></td>
         </tr>
         <tr style="background:var(--teal-light);">
-          <td colspan="4"><div class="tf-label" style="color:var(--teal-dark);">採購表剩餘預算</div></td>
+          <td colspan="5"><div class="tf-label" style="color:var(--teal-dark);">採購表剩餘預算</div></td>
           <td><div class="tf-total" id="remainCell" style="color:var(--teal-dark);">NT$0</div></td>
           <td colspan="3"></td>
         </tr>
@@ -708,11 +732,11 @@
           </div>
           <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。退費／加收會自動連動剩餘尾款與總花費。<span id="purchaseExtraNote"></span></div>
           <div class="money-legend">
-            <span class="c-paid">＋ 已付訂金</span>
-            <span class="c-refund">− 退費</span>
-            <span class="c-extra">＋ 加收</span>
-            <span style="color:var(--text2);">＝ 已付款；</span>
-            <span>總價 − 已付款 ＝ <span class="c-owe">− 尚未付（剩餘尾款）</span></span>
+            <span style="color:var(--text2);">付出去是 −、退回來是 ＋：</span>
+            <span class="c-paid">− 已付訂金</span>
+            <span class="c-refund">＋ 退費</span>
+            <span class="c-extra">− 加收</span>
+            <span class="c-owe">− 尚未付（還要再付的尾款）</span>
           </div>
           <div class="st-sum" id="purchaseStatusSum"></div>
         </div>
@@ -745,9 +769,9 @@
             <th style="width:90px;text-align:right;">數量</th>
             <th style="width:110px;text-align:right;">單價（元）</th>
             <th style="width:110px;text-align:right;">總價</th>
-            <th class="c-paid" style="width:130px;text-align:right;">＋ 已付訂金（元）</th>
-            <th class="c-refund" style="width:120px;text-align:right;">− 退費（元）</th>
-            <th class="c-extra" style="width:120px;text-align:right;">＋ 加收（元）</th>
+            <th class="c-paid" style="width:130px;text-align:right;">− 已付訂金（元）</th>
+            <th class="c-refund" style="width:120px;text-align:right;">＋ 退費（元）</th>
+            <th class="c-extra" style="width:120px;text-align:right;">− 加收（元）</th>
             <th class="c-owe" style="width:130px;text-align:right;">− 尚未付（尾款）</th>
             <th style="min-width:100px;">備註</th>
             <th style="width:128px;"></th>
@@ -912,7 +936,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v3.2';
+const APP_VERSION = 'v3.3';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1159,8 +1183,8 @@ function buildTable() {
       <td><div class="td-num">${i+1}</div></td>
       <td style="min-width:160px;">
         <textarea class="name-ta" placeholder="例：冰箱、冷氣、窗簾、床架" data-id="${row.id}" data-field="name" rows="1">${esc(row.name)}</textarea>
-        <div class="tag-row"><span class="st-tag" data-rst="${row.id}"></span></div>
       </td>
+      <td><div class="buy-cell" data-rst="${row.id}"></div></td>
       <td>
         <div class="qty-ctrl">
           <button class="qty-btn" data-id="${row.id}" data-action="minus">−</button>
@@ -1209,6 +1233,11 @@ tbody.addEventListener('input',e=>{
   updateTotals(); persist();
 });
 tbody.addEventListener('click',e=>{
+  /* 購買狀態欄：跳到已購買清單的對應列／帶入已購買清單 */
+  const goP=e.target.closest('.buy-link');
+  if(goP){ const t=document.querySelector('.st-tag[data-pst="'+goP.dataset.gotoPid+'"]'); jumpToRow(t&&t.closest('tr')); return; }
+  const mark=e.target.closest('.buy-mark');
+  if(mark){ handleMove('row', {id:mark.dataset.id}, 'purchase'); return; }
   /* 點縮圖放大預覽 */
   if(e.target.classList.contains('src-thumb')){ openImagePreview(e.target.src); return; }
   /* ± 數量 */
@@ -1776,7 +1805,8 @@ function getPurchaseSums(){
 /* 帶正負號的金額：＋NT$1,000／−NT$1,000 */
 const signed = (sign, n) => sign + fmt(Math.abs(n));
 
-/* 剩餘尾款格：還欠錢 → −金額（橘）、剛好付清 → 已付清（綠）、付超過 → 溢付＋金額（藍） */
+/* 剩餘尾款格（付出去是 −、退回來是 ＋）：
+   還要再付 → −金額（橘）、剛好付清 → 已付清（綠）、付超過 → 溢付＋金額（藍，廠商該退你） */
 function setRemainCell(el, sub, paid){
   const remain=sub-paid;
   el.classList.remove('c-owe','c-paid','c-refund');
@@ -1801,21 +1831,18 @@ function updatePurchaseTotals(){
   });
   const remainAll=total-deposit;
   document.getElementById('purchaseTotalCell').textContent       = fmt(total);
-  document.getElementById('purchaseDepositCell').textContent     = signed('＋',rawDeposit);
-  document.getElementById('purchaseRefundCell').textContent      = signed('−',refund);
-  document.getElementById('purchaseExtraChargeCell').textContent = signed('＋',extraCharge);
+  document.getElementById('purchaseDepositCell').textContent     = signed('−',rawDeposit);
+  document.getElementById('purchaseRefundCell').textContent      = signed('＋',refund);
+  document.getElementById('purchaseExtraChargeCell').textContent = signed('−',extraCharge);
   setRemainCell(document.getElementById('purchaseRemainCell'), total, deposit);
   document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
   document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
 
-  /* 標示／取消標示「採購表外」 */
+  /* 採購表外（額外支出）的筆數與金額 */
   let extra=0, extraCount=0;
   purchases.forEach(p=>{
-    const isExtra=isExtraPurchase(p);
-    if(isExtra){ extra+=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0); extraCount++; }
-    const tag=document.querySelector('.extra-tag[data-pid="'+p.id+'"]');
-    if(tag) tag.classList.toggle('hide', !isExtra);
+    if(isExtraPurchase(p)){ extra+=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0); extraCount++; }
   });
   const note=document.getElementById('purchaseExtraNote');
   if(note) note.innerHTML = extraCount
@@ -1831,25 +1858,33 @@ function updatePurchaseTotals(){
    所以「採購表還沒買的」必須逐筆比對，不能用「採購合計 − 已購總價」相減，
    否則額外支出會把採購表裡還沒買的項目抵銷掉，總花費會少算。
 
-   配對方式：優先用 fromId（從採購表按「✅」帶入時記錄的來源），
-   舊資料沒有 fromId 就退回用名稱比對。 */
+   配對方式見 purchaseRowId。 */
 const normName = s => String(s==null?'':s).replace(/\s+/g,'').toLowerCase();
 
+/* 這筆已購項目對應採購表的哪一列（回傳 row id，沒有對應回傳 null）：
+   fromId 指到現存的列 → 就是那列（「移至…」帶入或手動選的）；
+   fromId 是 'none' → 使用者手動設成「採購表外」；
+   其餘（舊資料沒有 fromId、或原本那列已刪掉）→ 退回用名稱比對。 */
+function purchaseRowId(p){
+  if(p.fromId==='none') return null;
+  if(p.fromId && rows.some(r=>r.id===p.fromId)) return p.fromId;
+  const k=normName(p.name); if(!k) return null;
+  const r=rows.find(r=>normName(r.name)===k);
+  return r ? r.id : null;
+}
+
 function getSpendBreakdown(){
-  const boughtIds=new Set(), boughtNames=new Set();
+  const boughtIds=new Set();
   let boughtTotal=0, paid=0;
   purchases.forEach(p=>{
     boughtTotal += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
     paid        += netPaid(p);
-    if(p.fromId) boughtIds.add(p.fromId);
-    const k=normName(p.name); if(k) boughtNames.add(k);
+    const rid=purchaseRowId(p); if(rid) boughtIds.add(rid);
   });
 
   let notYet=0, notYetCount=0;
   rows.forEach(r=>{
-    if(boughtIds.has(r.id)) return;                 /* 已帶入已購清單，改以實際成交價計算 */
-    const k=normName(r.name);
-    if(k && boughtNames.has(k)) return;
+    if(boughtIds.has(r.id)) return;                 /* 已在已購清單，改以實際成交價計算 */
     const sub=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0);
     if(sub>0){ notYet+=sub; notYetCount++; }
   });
@@ -1868,9 +1903,8 @@ function getSpendBreakdown(){
 }
 
 /* ══ 購買／付款狀態 ══
-   採購表每一列用 fromId 或同名對到已購買清單，就知道買了沒、錢付到哪：
-   還沒買 → 已下訂但還沒付款 → 已付訂金、待付尾款 → 已付清 */
-const ST_ROW = { notyet:'○ 還沒買', unpaid:'● 已下訂・還沒付款', partial:'⏳ 已下訂・待付尾款', paid:'✓ 已買・已付清' };
+   採購表每一列透過 purchaseRowId 對到已購買清單，就知道買了沒、錢付到哪。
+   兩邊互相連結：採購表點「↔ 已購買 #」、已購買點「↗」都會跳到對應那一列。 */
 const ST_PUR = { unpaid:'● 還沒付款', partial:'⏳ 待付尾款', paid:'✓ 已付清' };
 const ST_CLASSES = ['st-notyet','st-unpaid','st-partial','st-paid'];
 const purchaseSub = p => (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
@@ -1882,49 +1916,106 @@ function payStatus(total, paid){
   if(paid<total-0.005) return 'partial';
   return 'paid';
 }
-function rowStatus(r){
-  const k=normName(r.name);
-  const ps=purchases.filter(p=>p.fromId===r.id || (k && normName(p.name)===k));
-  if(!ps.length) return { st: k||(parseFloat(r.price)||0)>0 ? 'notyet' : 'none', owe:0 };
-  let total=0, paid=0;
-  ps.forEach(p=>{ total+=purchaseSub(p); paid+=netPaid(p); });
-  const st=payStatus(total,paid);
-  return { st: st==='none'?'unpaid':st, owe: Math.max(0,total-paid) };   /* 已帶入但還沒填金額，也算還沒付款 */
+function setRowClass(tr, st){
+  if(!tr) return;
+  tr.classList.remove(...ST_CLASSES);
+  if(st!=='none') tr.classList.add('st-'+st);
 }
-function setStatusTag(tag, st, label, title){
-  tag.className='st-tag'+(st==='none'?'':' st-'+st);
-  tag.textContent = st==='none' ? '' : label;
-  if(title) tag.title=title; else tag.removeAttribute('title');
-  const tr=tag.closest('tr');
-  if(tr){ tr.classList.remove(...ST_CLASSES); if(st!=='none') tr.classList.add('st-'+st); }
+
+/* 採購表名稱太長（含換行）時，下拉選單裡只取第一行的前 16 個字 */
+const shortName = s => { const t=String(s||'').trim().split('\n')[0].trim(); return t ? (t.length>16 ? t.slice(0,16)+'…' : t) : '（未命名）'; };
+let linkOptsKey='', linkOptsHtml='';
+function linkOptions(){
+  const key=rows.map(r=>r.id+'\u0001'+r.name).join('\u0002');
+  if(key!==linkOptsKey){
+    linkOptsKey=key;
+    linkOptsHtml=rows.map((r,i)=>`<option value="${r.id}">↔ 採購表 #${i+1} ${esc(shortName(r.name))}</option>`).join('')
+      + '<option value="none">＋ 採購表外（不對應）</option>';
+  }
+  return linkOptsHtml;
 }
-const statusSumHtml = (counts, labels) => Object.keys(labels).filter(k=>counts[k])
-  .map(k=>`<span class="st-tag st-${k}">${labels[k]} ${counts[k]} 筆</span>`).join('');
+
+function buyCellHtml(r, st, pids, owe){
+  if(st==='none') return '';
+  if(st==='notyet') return `<span class="buy-chip no">尚未購買</span>`
+    + `<button type="button" class="buy-btn buy-mark" data-id="${r.id}" title="帶入已購買清單，接著填已付訂金">＋ 標為已購</button>`;
+  const pay = st==='paid' ? '✓ 已付清' : st==='partial' ? '⏳ 待付尾款 '+signed('−',owe) : '● 還沒付款';
+  return `<span class="buy-chip yes">✓ 已購</span><span class="buy-pay st-${st}">${pay}</span>`
+    + pids.map(pid=>`<button type="button" class="buy-btn buy-link" data-goto-pid="${pid}" title="跳到已購買清單的這一列">↔ 已購買 #${purchases.findIndex(p=>p.id===pid)+1}</button>`).join('');
+}
 
 function refreshStatus(){
-  const rc={}, pc={};
-  rows.forEach(r=>{
-    const s=rowStatus(r); rc[s.st]=(rc[s.st]||0)+1;
-    const tag=document.querySelector('.st-tag[data-rst="'+r.id+'"]');
-    if(tag) setStatusTag(tag, s.st, ST_ROW[s.st], s.owe>0?'尾款還要付 '+fmt(s.owe):'');
+  /* 先算好每筆已購對到哪一列，避免重複比對 */
+  const byRow=new Map(), pRid=new Map();
+  purchases.forEach(p=>{
+    const rid=purchaseRowId(p); pRid.set(p.id, rid);
+    if(rid){ if(!byRow.has(rid)) byRow.set(rid,[]); byRow.get(rid).push(p); }
   });
+
+  const rc={ notyet:0, notyetAmt:0, bought:0, unpaid:0, partial:0, paid:0 };
+  rows.forEach(r=>{
+    const ps=byRow.get(r.id)||[];
+    let st, owe=0;
+    if(!ps.length){
+      st = normName(r.name)||(parseFloat(r.price)||0)>0 ? 'notyet' : 'none';
+      if(st==='notyet'){ rc.notyet++; rc.notyetAmt+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); }
+    } else {
+      let total=0, paid=0;
+      ps.forEach(p=>{ total+=purchaseSub(p); paid+=netPaid(p); });
+      st=payStatus(total,paid); if(st==='none') st='unpaid';   /* 已帶入但還沒填金額，也算還沒付款 */
+      owe=Math.max(0,total-paid);
+      rc.bought++; rc[st]++;
+    }
+    const cell=document.querySelector('.buy-cell[data-rst="'+r.id+'"]');
+    if(cell){ cell.innerHTML=buyCellHtml(r, st, ps.map(p=>p.id), owe); setRowClass(cell.closest('tr'), st); }
+  });
+
+  const pc={};
+  const opts=linkOptions();
   purchases.forEach(p=>{
     const sub=purchaseSub(p), paid=netPaid(p), st=payStatus(sub,paid);
     pc[st]=(pc[st]||0)+1;
     const tag=document.querySelector('.st-tag[data-pst="'+p.id+'"]');
-    if(tag) setStatusTag(tag, st, ST_PUR[st], st==='partial'?'尾款還要付 '+fmt(sub-paid):'');
+    if(tag){
+      tag.className='st-tag'+(st==='none'?'':' st-'+st);
+      tag.textContent = st==='none' ? '' : ST_PUR[st];
+      if(st==='partial') tag.title='尾款還要付 '+fmt(sub-paid); else tag.removeAttribute('title');
+      setRowClass(tag.closest('tr'), st);
+    }
+    const sel=document.querySelector('.link-select[data-link-pid="'+p.id+'"]');
+    if(sel){
+      if(sel.dataset.key!==linkOptsKey){ sel.innerHTML=opts; sel.dataset.key=linkOptsKey; }
+      const rid=pRid.get(p.id);
+      sel.value = rid || 'none';
+      sel.classList.toggle('linked', !!rid);
+      const jump=sel.parentElement.querySelector('.link-jump');
+      if(jump) jump.hidden=!rid;
+    }
   });
+
   const rs=document.getElementById('rowStatusSum'), ps=document.getElementById('purchaseStatusSum');
-  if(rs) rs.innerHTML=statusSumHtml(rc, ST_ROW);
-  if(ps) ps.innerHTML=statusSumHtml(pc, ST_PUR);
+  if(rs) rs.innerHTML =
+      (rc.notyet ? `<span class="st-tag">尚未購買 ${rc.notyet} 筆（${fmt(rc.notyetAmt)}）</span>` : '')
+    + (rc.bought ? `<span class="st-tag st-paid">✓ 已購 ${rc.bought} 筆</span>` : '')
+    + (rc.paid    ? `<span class="st-tag st-paid">其中已付清 ${rc.paid}</span>` : '')
+    + (rc.partial ? `<span class="st-tag st-partial">待付尾款 ${rc.partial}</span>` : '')
+    + (rc.unpaid  ? `<span class="st-tag st-unpaid">還沒付款 ${rc.unpaid}</span>` : '');
+  if(ps) ps.innerHTML=Object.keys(ST_PUR).filter(k=>pc[k])
+    .map(k=>`<span class="st-tag st-${k}">${ST_PUR[k]} ${pc[k]} 筆</span>`).join('');
+}
+
+/* 跳到另一張表的對應列，閃一下讓眼睛找得到 */
+function jumpToRow(tr){
+  if(!tr) return;
+  tr.scrollIntoView({block:'center',behavior:'smooth'});
+  tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+  setTimeout(()=>tr.classList.remove('flash'),1800);
 }
 
 /* 這筆已購項目在採購成本表裡找不到對應 → 屬於額外支出 */
 function isExtraPurchase(p){
-  if(p.fromId && rows.some(r=>r.id===p.fromId)) return false;
-  const k=normName(p.name);
-  if(!k) return false;
-  return !rows.some(r=>normName(r.name)===k);
+  if(purchaseRowId(p)) return false;
+  return p.fromId==='none' || !!normName(p.name);
 }
 
 /* ══ 頁首大數字 ══
@@ -1968,7 +2059,8 @@ function buildPurchaseTable(){
         <textarea class="name-ta" placeholder="例：冰箱、沙發" data-pid="${p.id}" data-pf="name" rows="1">${esc(p.name)}</textarea>
         <div class="tag-row">
           <span class="st-tag" data-pst="${p.id}"></span>
-          <span class="extra-tag${isExtraPurchase(p)?'':' hide'}" data-pid="${p.id}" title="採購成本表裡找不到同名項目，屬於額外支出（例如契稅、驗屋）">＋ 採購表外</span>
+          <select class="link-select" data-link-pid="${p.id}" title="這筆對應採購表的哪一列（沒有對應＝採購表外的額外支出，例如契稅、驗屋）"></select>
+          <button type="button" class="link-jump" data-link-pid="${p.id}" title="跳到採購表對應的那一列">↗</button>
         </div>
       </td>
       <td>
@@ -1980,9 +2072,9 @@ function buildPurchaseTable(){
       </td>
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="price" value="${esc(p.price)}" /></td>
       <td><div class="subtotal-cell" data-pid="${p.id}">${sub>0?fmt(sub):'—'}</div></td>
-      <td><div class="sg-cell c-paid"><span class="sg">＋</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="已經付出去的錢，可輸入算式，例如 8000+3216" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" /></div></td>
-      <td><div class="sg-cell c-refund"><span class="sg">−</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商退還的金額，會從已付訂金扣除" data-pid="${p.id}" data-pf="refund" value="${esc(p.refund)}" /></div></td>
-      <td><div class="sg-cell c-extra"><span class="sg">＋</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商額外多收的金額，會加到已付訂金" data-pid="${p.id}" data-pf="extraCharge" value="${esc(p.extraCharge)}" /></div></td>
+      <td><div class="sg-cell c-paid"><span class="sg">−</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="已經付出去的錢，可輸入算式，例如 8000+3216" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" /></div></td>
+      <td><div class="sg-cell c-refund"><span class="sg">＋</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商退還的金額，會從已付訂金扣除" data-pid="${p.id}" data-pf="refund" value="${esc(p.refund)}" /></div></td>
+      <td><div class="sg-cell c-extra"><span class="sg">−</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商額外多收的金額，會加到已付訂金" data-pid="${p.id}" data-pf="extraCharge" value="${esc(p.extraCharge)}" /></div></td>
       <td><div class="subtotal-cell remain-cell" data-pid="${p.id}"></div></td>
       <td><input class="td-input mq-field" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
       <td><div class="row-actions">
@@ -2013,6 +2105,13 @@ purchaseBody.addEventListener('input',e=>{
   updatePurchaseTotals(); persistPurchases();
 });
 purchaseBody.addEventListener('click',e=>{
+  /* 跳到採購表的對應列 */
+  const jump=e.target.closest('.link-jump');
+  if(jump){
+    const p=purchases.find(x=>x.id===jump.dataset.linkPid); const rid=p&&purchaseRowId(p);
+    const c=rid&&document.querySelector('.buy-cell[data-rst="'+rid+'"]');
+    jumpToRow(c&&c.closest('tr')); return;
+  }
   /* ± 數量 */
   const qBtn=e.target.closest('.purchase-qty-btn');
   if(qBtn&&qBtn.dataset.pid){
@@ -2028,6 +2127,14 @@ purchaseBody.addEventListener('click',e=>{
   if(!confirm('確定刪除這筆已購項目？'))return;
   purchases=purchases.filter(x=>x.id!==btn.dataset.pid);
   buildPurchaseTable(); persistPurchases();
+});
+/* 手動指定對應採購表的哪一列（名稱不一樣也能對起來），或設成採購表外 */
+purchaseBody.addEventListener('change',e=>{
+  const sel=e.target.closest('.link-select'); if(!sel) return;
+  const p=purchases.find(x=>x.id===sel.dataset.linkPid); if(!p) return;
+  p.fromId=sel.value;
+  updatePurchaseTotals(); persistPurchases();
+  toast(sel.value==='none' ? '已設為採購表外' : '已對應到採購表 '+sel.options[sel.selectedIndex].text.replace('↔ 採購表 ',''));
 });
 document.getElementById('addPurchaseBtn').addEventListener('click',()=>{
   purchases.push(newPurchase()); buildPurchaseTable(); persistPurchases();
