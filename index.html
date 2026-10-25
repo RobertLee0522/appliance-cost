@@ -253,6 +253,15 @@
   .buy-btn:hover { text-decoration:underline; }
   .buy-link { color:var(--indigo-dark); }
   .buy-mark { color:var(--teal-dark); }
+  /* 採購表：點欄位標題排序 */
+  th.sortable { cursor:pointer; user-select:none; -webkit-user-select:none; transition:color .15s, background .15s; }
+  th.sortable:hover { color:var(--text); background:var(--bg3); }
+  th.sortable.sorted { color:var(--teal-dark); }
+  .sort-ind { display:inline-block; margin-left:4px; font-size:10px; opacity:.35; }
+  .sort-ind::before { content:'⇅'; }
+  th.sorted .sort-ind { opacity:1; }
+  th.sorted.asc .sort-ind::before { content:'▲'; }
+  th.sorted.desc .sort-ind::before { content:'▼'; }
   /* 採購表「還要付」欄 */
   .owe-cell { display:flex; flex-direction:column; align-items:flex-end; gap:2px; padding:8px 12px; text-align:right; font-variant-numeric:tabular-nums; }
   .owe-cell:empty { padding:0; }
@@ -635,7 +644,8 @@
             <span class="chip teal">列入預算</span>
           </div>
           <div class="sect-sub">主力清單：數量、單價、每年花費都會計入上方的預算與統計。「購買狀態」會對照已購買清單，標出已購／尚未購買和付款進度，點「↔ 已購買 #」可跳到對應那一列。
-            「還要付」：還沒買的用採購表單價估算；已買的改用已購買清單的實際成交價，扣掉已付訂金。</div>
+            「還要付」：還沒買的用採購表單價估算；已買的改用已購買清單的實際成交價，扣掉已付訂金。
+            <b>點欄位標題可以排序</b>，再點一下反過來，點第三下回到新增順序。</div>
           <div class="st-sum" id="rowStatusSum"></div>
         </div>
       </div>
@@ -655,13 +665,13 @@
       <thead>
         <tr>
           <th style="width:36px;">#</th>
-          <th style="min-width:140px;">家電總類</th>
-          <th style="min-width:130px;">購買狀態</th>
+          <th class="sortable" data-sort="name" style="min-width:140px;">家電總類<span class="sort-ind"></span></th>
+          <th class="sortable" data-sort="status" style="min-width:130px;">購買狀態<span class="sort-ind"></span></th>
           <th style="width:60px;text-align:right;">數量</th>
-          <th style="width:110px;text-align:right;">單價（元）</th>
-          <th style="width:110px;text-align:right;">採購小計</th>
-          <th class="c-owe" style="min-width:150px;text-align:right;">還要付</th>
-          <th style="width:120px;text-align:right;">每年花費（元）</th>
+          <th class="sortable" data-sort="price" style="width:110px;text-align:right;">單價（元）<span class="sort-ind"></span></th>
+          <th class="sortable" data-sort="sub" style="width:110px;text-align:right;">採購小計<span class="sort-ind"></span></th>
+          <th class="sortable c-owe" data-sort="owe" style="min-width:150px;text-align:right;">還要付<span class="sort-ind"></span></th>
+          <th class="sortable" data-sort="annual" style="width:120px;text-align:right;">每年花費（元）<span class="sort-ind"></span></th>
           <th style="min-width:180px;">來源 / 網址</th>
           <th style="width:128px;"></th>
         </tr>
@@ -960,7 +970,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v3.5';
+const APP_VERSION = 'v3.6';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1331,6 +1341,58 @@ tbody.addEventListener('change',e=>{
   }
   persist();
 });
+
+/* ══ 採購表排序：點欄位標題 ══
+   第一下排一個方向、第二下反過來、第三下回到新增順序。
+   排序會直接改變清單順序並存起來（雲端同步也是這個順序），之後改金額不會自動跳位。
+   兩張表是用 id 對應，排序不影響和已購買清單的連結。 */
+const ST_RANK = { notyet:0, unpaid:1, partial:2, paid:3 };
+const ROW_SORTS = {
+  name:   { first:'asc',  text:['名稱 A→Z','名稱 Z→A'],                   val:r=>String(r.name||'').trim()||null },
+  status: { first:'asc',  text:['尚未購買排最上面','已付清排最上面'],       val:(r,i)=>i.st in ST_RANK ? ST_RANK[i.st] : null },
+  price:  { first:'desc', text:['單價由高到低','單價由低到高'],             val:r=>parseFloat(r.price)||null },
+  sub:    { first:'desc', text:['採購小計由高到低','採購小計由低到高'],     val:(r,i)=>i.plan||null },
+  owe:    { first:'desc', text:['還要付由多到少','還要付由少到多'],         val:(r,i)=>i.st==='none' ? null : i.owe },
+  annual: { first:'desc', text:['每年花費由高到低','每年花費由低到高'],     val:r=>parseFloat(r.annualCost)||null }
+};
+let rowSort={ key:'', step:0 };      /* step：1＝第一個方向、2＝反方向、0＝新增順序 */
+const nameCollator = new Intl.Collator('zh-Hant-TW', { numeric:true, sensitivity:'base' });
+
+function sortRows(key){
+  rowSort = rowSort.key===key ? { key, step:(rowSort.step+1)%3 } : { key, step:1 };
+  const def=ROW_SORTS[key];
+  if(rowSort.step===0){
+    rows.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);   /* id 開頭是建立時間，排回來就是新增順序 */
+  } else {
+    const dir = (rowSort.step===1) === (def.first==='asc') ? 1 : -1;
+    const info=rowPayInfo();
+    const val=r=>def.val(r, info.get(r.id));
+    rows.sort((a,b)=>{                                  /* 沒有值的永遠排最後；同值維持原順序 */
+      const va=val(a), vb=val(b);
+      if(va===null||vb===null) return va===null ? (vb===null?0:1) : -1;
+      const c = typeof va==='string' ? nameCollator.compare(va,vb) : va-vb;
+      return c*dir;
+    });
+  }
+  buildTable(); updateTotals(); persist();
+  updateSortHeaders();
+  toast(rowSort.step===0 ? '回到新增順序' : '已依'+def.text[rowSort.step-1]);
+}
+function updateSortHeaders(){
+  document.querySelectorAll('#sec-buy th.sortable').forEach(th=>{
+    const on = th.dataset.sort===rowSort.key && rowSort.step!==0;
+    th.classList.toggle('sorted', on);
+    th.classList.remove('asc','desc');
+    if(on){
+      const def=ROW_SORTS[rowSort.key];
+      const asc = (rowSort.step===1) === (def.first==='asc');
+      th.classList.add(asc?'asc':'desc');
+      th.title='再點一下'+(rowSort.step===1?'反過來排':'回到新增順序');
+    } else th.title='點一下排序';
+  });
+}
+document.querySelectorAll('#sec-buy th.sortable').forEach(th=>th.addEventListener('click',()=>sortRows(th.dataset.sort)));
+updateSortHeaders();
 
 document.getElementById('addBtn').addEventListener('click',()=>{
   rows.push(newRow()); buildTable(); updateTotals(); persist();
@@ -1993,30 +2055,42 @@ function oweCellHtml(st, plan, actual, owe){
   return val + `<span class="owe-sub">成交 ${fmt(actual)}${diff}</span>`;
 }
 
-function refreshStatus(){
-  /* 先算好每筆已購對到哪一列，避免重複比對 */
-  const byRow=new Map(), pRid=new Map();
+/* 採購表每一列的購買／付款資訊（id → { st, plan, total, owe, pids }）：
+   st：none／notyet（還沒買）／unpaid／partial／paid；
+   owe：還要付多少（還沒買＝用採購表小計估算，已買＝實際尾款） */
+function rowPayInfo(){
+  const byRow=new Map();
   purchases.forEach(p=>{
-    const rid=purchaseRowId(p); pRid.set(p.id, rid);
+    const rid=purchaseRowId(p);
     if(rid){ if(!byRow.has(rid)) byRow.set(rid,[]); byRow.get(rid).push(p); }
   });
-
-  const rc={ notyet:0, notyetAmt:0, bought:0, unpaid:0, partial:0, paid:0, boughtOwe:0 };
+  const info=new Map();
   rows.forEach(r=>{
     const ps=byRow.get(r.id)||[];
     const plan=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0);
     let st, owe=0, total=0;
     if(!ps.length){
       st = normName(r.name)||plan>0 ? 'notyet' : 'none';
-      if(st==='notyet'){ rc.notyet++; rc.notyetAmt+=plan; }
+      if(st==='notyet') owe=plan;
     } else {
       let paid=0;
       ps.forEach(p=>{ total+=purchaseSub(p); paid+=depositOf(p); owe+=Math.max(0, owedOf(p)); });
       st=payStatus(total,paid); if(st==='none') st='unpaid';   /* 已帶入但還沒填金額，也算還沒付款 */
-      rc.bought++; rc[st]++; rc.boughtOwe+=owe;
     }
+    info.set(r.id, { st, plan, total, owe, pids:ps.map(p=>p.id) });
+  });
+  return info;
+}
+
+function refreshStatus(){
+  const info=rowPayInfo();
+  const rc={ notyet:0, notyetAmt:0, bought:0, unpaid:0, partial:0, paid:0, boughtOwe:0 };
+  rows.forEach(r=>{
+    const { st, plan, total, owe, pids } = info.get(r.id);
+    if(st==='notyet'){ rc.notyet++; rc.notyetAmt+=plan; }
+    else if(st!=='none'){ rc.bought++; rc[st]++; rc.boughtOwe+=owe; }
     const cell=document.querySelector('.buy-cell[data-rst="'+r.id+'"]');
-    if(cell){ cell.innerHTML=buyCellHtml(r, st, ps.map(p=>p.id)); setRowClass(cell.closest('tr'), st); }
+    if(cell){ cell.innerHTML=buyCellHtml(r, st, pids); setRowClass(cell.closest('tr'), st); }
     const oc=document.querySelector('.owe-cell[data-rst="'+r.id+'"]');
     if(oc) oc.innerHTML=oweCellHtml(st, plan, total, owe);
   });
@@ -2043,7 +2117,7 @@ function refreshStatus(){
     const sel=document.querySelector('.link-select[data-link-pid="'+p.id+'"]');
     if(sel){
       if(sel.dataset.key!==linkOptsKey){ sel.innerHTML=opts; sel.dataset.key=linkOptsKey; }
-      const rid=pRid.get(p.id);
+      const rid=purchaseRowId(p);
       sel.value = rid || 'none';
       sel.classList.toggle('linked', !!rid);
       const jump=sel.parentElement.querySelector('.link-jump');
