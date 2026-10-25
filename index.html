@@ -233,6 +233,33 @@
   .extra-tag { display:inline-block; margin:0 12px 7px; font-size:10.5px; font-weight:600; color:var(--amber-dark); background:var(--amber-light); border:0.5px solid color-mix(in srgb, var(--amber) 30%, transparent); border-radius:999px; padding:2px 8px; cursor:help; }
   .extra-tag.hide { display:none; }
 
+  /* 購買／付款狀態標籤 */
+  .tag-row { display:flex; flex-wrap:wrap; gap:4px; margin:0 12px 7px; }
+  .tag-row .extra-tag { margin:0; }
+  .st-tag { display:inline-flex; align-items:center; font-size:10.5px; font-weight:600; border-radius:999px; padding:2px 8px; border:0.5px solid transparent; color:var(--text2); background:var(--bg3); }
+  .st-tag:empty { display:none; }
+  .st-tag.st-unpaid  { color:var(--red); background:var(--red-light); border-color:color-mix(in srgb, var(--red) 30%, transparent); }
+  .st-tag.st-partial { color:var(--amber-dark); background:var(--amber-light); border-color:color-mix(in srgb, var(--amber) 30%, transparent); }
+  .st-tag.st-paid    { color:var(--teal-dark); background:var(--teal-light); border-color:color-mix(in srgb, var(--teal) 30%, transparent); }
+  tbody tr.st-notyet  td:first-child { box-shadow:inset 3px 0 0 var(--border2); }
+  tbody tr.st-unpaid  td:first-child { box-shadow:inset 3px 0 0 var(--red); }
+  tbody tr.st-partial td:first-child { box-shadow:inset 3px 0 0 var(--amber); }
+  tbody tr.st-paid    td:first-child { box-shadow:inset 3px 0 0 var(--teal); }
+  .st-sum { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .st-sum:empty { display:none; }
+  .st-sum .st-tag { font-size:11.5px; padding:3px 10px; }
+
+  /* 已購買清單：金額欄位加上正負號與各自的顏色 */
+  .sg-cell { display:flex; align-items:center; }
+  .sg-cell .sg { flex-shrink:0; padding-left:8px; font-size:14px; font-weight:700; }
+  .sg-cell .td-input { padding-left:4px; }
+  .sg-cell:has(.td-input:placeholder-shown) .sg { opacity:.35; }
+  .c-paid,   .c-paid .td-input   { color:var(--teal-dark) !important; }
+  .c-refund, .c-refund .td-input { color:var(--indigo) !important; }
+  .c-extra,  .c-extra .td-input  { color:var(--red) !important; }
+  .c-owe { color:var(--amber) !important; }
+  .money-legend { display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:6px; font-size:11.5px; font-weight:600; }
+
   /* ══ 比價表 ══ */
   .cmp-list { display:flex; flex-direction:column; gap:12px; }
   .cmp-group { border:0.5px solid var(--border); border-radius:var(--radius); background:var(--bg2); overflow:hidden; }
@@ -294,6 +321,20 @@
   .cmp-empty { padding:26px 16px; text-align:center; color:var(--text2); font-size:13px; line-height:1.9; }
   .cmp-empty .cmp-empty-icon { font-size:30px; display:block; margin-bottom:6px; }
   .cmp-add-row { padding:8px 12px 10px; }
+  /* 收合：預設只顯示商品名稱與最低價，點一下展開各家報價 */
+  .cmp-toggle { display:inline-flex; align-items:center; gap:8px; min-width:0; border:none; background:none; padding:6px 4px; cursor:pointer; font-family:inherit; color:var(--text); text-align:left; }
+  .cmp-chev { flex-shrink:0; width:22px; height:22px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--indigo-dark); background:var(--indigo-light); font-size:11px; transition:transform .15s; }
+  .cmp-group.open .cmp-chev { transform:rotate(90deg); }
+  .cmp-title-text { font-size:15px; font-weight:650; letter-spacing:-0.1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cmp-title-text.empty { color:var(--text3); font-weight:500; }
+  .cmp-group.open .cmp-title-text { display:none; }
+  .cmp-group:not(.open) .cmp-toggle { flex:1 1 180px; }
+  .cmp-group:not(.open) .cmp-group-head { border-bottom:none; cursor:pointer; }
+  .cmp-group:not(.open) .cmp-group-head:hover { background:color-mix(in srgb, var(--indigo) 5%, var(--bg)); }
+  .cmp-group:not(.open) .cmp-title-input,
+  .cmp-group:not(.open) .cmp-head-btns,
+  .cmp-group:not(.open) .cmp-items,
+  .cmp-group:not(.open) .cmp-add-row { display:none; }
 
   /* modal */
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,15,12,.5); backdrop-filter:blur(3px); z-index:100; align-items:center; justify-content:center; padding:1rem; }
@@ -487,10 +528,11 @@
             比價表
             <span class="chip indigo">逛街用</span>
           </div>
-          <div class="sect-sub">同一件商品在不同店家的報價放一起比，系統自動標出最便宜的那家。純比價，不列入預算、不計入任何合計金額。</div>
+          <div class="sect-sub">同一件商品在不同店家的報價放一起比，系統自動標出最便宜的那家。純比價，不列入預算、不計入任何合計金額。點商品名稱展開看各家報價。</div>
         </div>
       </div>
       <div class="sect-actions">
+        <button class="btn" id="cmpToggleAllBtn">全部展開</button>
         <button class="btn primary" id="addCompareBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           新增比價商品
@@ -553,7 +595,8 @@
             採購成本表
             <span class="chip teal">列入預算</span>
           </div>
-          <div class="sect-sub">主力清單：數量、單價、每年花費都會計入上方的預算與統計。</div>
+          <div class="sect-sub">主力清單：數量、單價、每年花費都會計入上方的預算與統計。每一列會自動對照已購買清單，標出買了沒、付款到哪。</div>
+          <div class="st-sum" id="rowStatusSum"></div>
         </div>
       </div>
       <div class="sect-actions">
@@ -664,6 +707,14 @@
             <span class="chip teal">訂金／尾款追蹤</span>
           </div>
           <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。退費／加收會自動連動剩餘尾款與總花費。<span id="purchaseExtraNote"></span></div>
+          <div class="money-legend">
+            <span class="c-paid">＋ 已付訂金</span>
+            <span class="c-refund">− 退費</span>
+            <span class="c-extra">＋ 加收</span>
+            <span style="color:var(--text2);">＝ 已付款；</span>
+            <span>總價 − 已付款 ＝ <span class="c-owe">− 尚未付（剩餘尾款）</span></span>
+          </div>
+          <div class="st-sum" id="purchaseStatusSum"></div>
         </div>
       </div>
       <div class="sect-actions">
@@ -686,7 +737,7 @@
       </div>
     </div>
     <div class="table-card table-inner">
-      <table style="min-width:1220px;">
+      <table style="min-width:1260px;">
         <thead>
           <tr>
             <th style="width:36px;">#</th>
@@ -694,10 +745,10 @@
             <th style="width:90px;text-align:right;">數量</th>
             <th style="width:110px;text-align:right;">單價（元）</th>
             <th style="width:110px;text-align:right;">總價</th>
-            <th style="width:120px;text-align:right;">已付訂金（元）</th>
-            <th style="width:110px;text-align:right;">退費（元）</th>
-            <th style="width:110px;text-align:right;">加收（元）</th>
-            <th style="width:120px;text-align:right;">剩餘尾款</th>
+            <th class="c-paid" style="width:130px;text-align:right;">＋ 已付訂金（元）</th>
+            <th class="c-refund" style="width:120px;text-align:right;">− 退費（元）</th>
+            <th class="c-extra" style="width:120px;text-align:right;">＋ 加收（元）</th>
+            <th class="c-owe" style="width:130px;text-align:right;">− 尚未付（尾款）</th>
             <th style="min-width:100px;">備註</th>
             <th style="width:128px;"></th>
           </tr>
@@ -707,10 +758,10 @@
           <tr>
             <td colspan="4"><div class="tf-label">合計</div></td>
             <td><div class="tf-total" id="purchaseTotalCell" style="text-align:right;font-size:14px;">NT$0</div></td>
-            <td><div class="tf-total" id="purchaseDepositCell" style="text-align:right;font-size:14px;color:var(--teal-dark);">NT$0</div></td>
-            <td><div class="tf-total" id="purchaseRefundCell" style="text-align:right;font-size:14px;color:var(--teal-dark);">NT$0</div></td>
-            <td><div class="tf-total" id="purchaseExtraChargeCell" style="text-align:right;font-size:14px;color:var(--red);">NT$0</div></td>
-            <td><div class="tf-total" id="purchaseRemainCell" style="text-align:right;color:var(--amber);">NT$0</div></td>
+            <td><div class="tf-total c-paid" id="purchaseDepositCell" style="text-align:right;font-size:14px;">NT$0</div></td>
+            <td><div class="tf-total c-refund" id="purchaseRefundCell" style="text-align:right;font-size:14px;">NT$0</div></td>
+            <td><div class="tf-total c-extra" id="purchaseExtraChargeCell" style="text-align:right;font-size:14px;">NT$0</div></td>
+            <td><div class="tf-total" id="purchaseRemainCell" style="text-align:right;">NT$0</div></td>
             <td colspan="2"></td>
           </tr>
         </tfoot>
@@ -861,7 +912,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v3.1';
+const APP_VERSION = 'v3.2';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1076,6 +1127,7 @@ function updateTotals() {
   });
 
   updateHero();
+  refreshStatus();
 }
 
 const LSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
@@ -1107,6 +1159,7 @@ function buildTable() {
       <td><div class="td-num">${i+1}</div></td>
       <td style="min-width:160px;">
         <textarea class="name-ta" placeholder="例：冰箱、冷氣、窗簾、床架" data-id="${row.id}" data-field="name" rows="1">${esc(row.name)}</textarea>
+        <div class="tag-row"><span class="st-tag" data-rst="${row.id}"></span></div>
       </td>
       <td>
         <div class="qty-ctrl">
@@ -1720,28 +1773,38 @@ function getPurchaseSums(){
   return { total, deposit, remain: total-deposit };
 }
 
+/* 帶正負號的金額：＋NT$1,000／−NT$1,000 */
+const signed = (sign, n) => sign + fmt(Math.abs(n));
+
+/* 剩餘尾款格：還欠錢 → −金額（橘）、剛好付清 → 已付清（綠）、付超過 → 溢付＋金額（藍） */
+function setRemainCell(el, sub, paid){
+  const remain=sub-paid;
+  el.classList.remove('c-owe','c-paid','c-refund');
+  if(!(sub>0||paid!==0)) el.textContent='—';
+  else if(remain>0.005)      { el.textContent=signed('−',remain);         el.classList.add('c-owe'); }
+  else if(remain<-0.005) { el.textContent='溢付 '+signed('＋',remain); el.classList.add('c-refund'); }
+  else                   { el.textContent='✓ 已付清';                  el.classList.add('c-paid'); }
+}
+
 function updatePurchaseTotals(){
-  let total=0, deposit=0, refund=0, extraCharge=0;
+  let total=0, deposit=0, rawDeposit=0, refund=0, extraCharge=0;
   purchases.forEach(p=>{
     const sub=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
     const dep=netPaid(p);
     total+=sub; deposit+=dep;
+    rawDeposit+=parseFloat(p.deposit)||0;
     refund+=parseFloat(p.refund)||0; extraCharge+=parseFloat(p.extraCharge)||0;
     const s=document.querySelector('.subtotal-cell[data-pid="'+p.id+'"]');
     if(s) s.textContent=sub>0?fmt(sub):'—';
     const rm=document.querySelector('.remain-cell[data-pid="'+p.id+'"]');
-    if(rm){
-      const remain=sub-dep;
-      rm.textContent=sub>0||dep!==0?fmt(remain):'—';
-      rm.style.color=remain>0?'var(--amber)':'var(--teal-dark)';
-    }
+    if(rm) setRemainCell(rm, sub, dep);
   });
   const remainAll=total-deposit;
   document.getElementById('purchaseTotalCell').textContent       = fmt(total);
-  document.getElementById('purchaseDepositCell').textContent     = fmt(deposit);
-  document.getElementById('purchaseRefundCell').textContent      = fmt(refund);
-  document.getElementById('purchaseExtraChargeCell').textContent = fmt(extraCharge);
-  document.getElementById('purchaseRemainCell').textContent      = fmt(remainAll);
+  document.getElementById('purchaseDepositCell').textContent     = signed('＋',rawDeposit);
+  document.getElementById('purchaseRefundCell').textContent      = signed('−',refund);
+  document.getElementById('purchaseExtraChargeCell').textContent = signed('＋',extraCharge);
+  setRemainCell(document.getElementById('purchaseRemainCell'), total, deposit);
   document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
   document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
@@ -1760,6 +1823,7 @@ function updatePurchaseTotals(){
     : '';
 
   updateHero();
+  refreshStatus();
 }
 
 /* ══ 全部支出的拆解 ══
@@ -1801,6 +1865,58 @@ function getSpendBreakdown(){
   const toPay = Math.max(0, boughtTotal-paid);
   return { paid, boughtTotal, toPay, notYet, notYetCount, extra, extraCount,
            willPay: toPay+notYet, grand: paid+toPay+notYet };
+}
+
+/* ══ 購買／付款狀態 ══
+   採購表每一列用 fromId 或同名對到已購買清單，就知道買了沒、錢付到哪：
+   還沒買 → 已下訂但還沒付款 → 已付訂金、待付尾款 → 已付清 */
+const ST_ROW = { notyet:'○ 還沒買', unpaid:'● 已下訂・還沒付款', partial:'⏳ 已下訂・待付尾款', paid:'✓ 已買・已付清' };
+const ST_PUR = { unpaid:'● 還沒付款', partial:'⏳ 待付尾款', paid:'✓ 已付清' };
+const ST_CLASSES = ['st-notyet','st-unpaid','st-partial','st-paid'];
+const purchaseSub = p => (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
+
+/* none＝金額都還沒填、unpaid＝一毛都還沒付、partial＝付了一部分、paid＝付清 */
+function payStatus(total, paid){
+  if(total<=0 && paid<=0) return 'none';
+  if(paid<=0) return 'unpaid';
+  if(paid<total-0.005) return 'partial';
+  return 'paid';
+}
+function rowStatus(r){
+  const k=normName(r.name);
+  const ps=purchases.filter(p=>p.fromId===r.id || (k && normName(p.name)===k));
+  if(!ps.length) return { st: k||(parseFloat(r.price)||0)>0 ? 'notyet' : 'none', owe:0 };
+  let total=0, paid=0;
+  ps.forEach(p=>{ total+=purchaseSub(p); paid+=netPaid(p); });
+  const st=payStatus(total,paid);
+  return { st: st==='none'?'unpaid':st, owe: Math.max(0,total-paid) };   /* 已帶入但還沒填金額，也算還沒付款 */
+}
+function setStatusTag(tag, st, label, title){
+  tag.className='st-tag'+(st==='none'?'':' st-'+st);
+  tag.textContent = st==='none' ? '' : label;
+  if(title) tag.title=title; else tag.removeAttribute('title');
+  const tr=tag.closest('tr');
+  if(tr){ tr.classList.remove(...ST_CLASSES); if(st!=='none') tr.classList.add('st-'+st); }
+}
+const statusSumHtml = (counts, labels) => Object.keys(labels).filter(k=>counts[k])
+  .map(k=>`<span class="st-tag st-${k}">${labels[k]} ${counts[k]} 筆</span>`).join('');
+
+function refreshStatus(){
+  const rc={}, pc={};
+  rows.forEach(r=>{
+    const s=rowStatus(r); rc[s.st]=(rc[s.st]||0)+1;
+    const tag=document.querySelector('.st-tag[data-rst="'+r.id+'"]');
+    if(tag) setStatusTag(tag, s.st, ST_ROW[s.st], s.owe>0?'尾款還要付 '+fmt(s.owe):'');
+  });
+  purchases.forEach(p=>{
+    const sub=purchaseSub(p), paid=netPaid(p), st=payStatus(sub,paid);
+    pc[st]=(pc[st]||0)+1;
+    const tag=document.querySelector('.st-tag[data-pst="'+p.id+'"]');
+    if(tag) setStatusTag(tag, st, ST_PUR[st], st==='partial'?'尾款還要付 '+fmt(sub-paid):'');
+  });
+  const rs=document.getElementById('rowStatusSum'), ps=document.getElementById('purchaseStatusSum');
+  if(rs) rs.innerHTML=statusSumHtml(rc, ST_ROW);
+  if(ps) ps.innerHTML=statusSumHtml(pc, ST_PUR);
 }
 
 /* 這筆已購項目在採購成本表裡找不到對應 → 屬於額外支出 */
@@ -1845,14 +1961,15 @@ function buildPurchaseTable(){
   tbody.innerHTML='';
   purchases.forEach((p,i)=>{
     const sub=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
-    const dep=netPaid(p);
-    const remain=sub-dep;
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td><div class="td-num">${i+1}</div></td>
       <td style="min-width:160px;">
         <textarea class="name-ta" placeholder="例：冰箱、沙發" data-pid="${p.id}" data-pf="name" rows="1">${esc(p.name)}</textarea>
-        <div class="extra-tag${isExtraPurchase(p)?'':' hide'}" data-pid="${p.id}" title="採購成本表裡找不到同名項目，屬於額外支出（例如契稅、驗屋）">＋ 採購表外</div>
+        <div class="tag-row">
+          <span class="st-tag" data-pst="${p.id}"></span>
+          <span class="extra-tag${isExtraPurchase(p)?'':' hide'}" data-pid="${p.id}" title="採購成本表裡找不到同名項目，屬於額外支出（例如契稅、驗屋）">＋ 採購表外</span>
+        </div>
       </td>
       <td>
         <div class="qty-ctrl">
@@ -1863,10 +1980,10 @@ function buildPurchaseTable(){
       </td>
       <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="price" value="${esc(p.price)}" /></td>
       <td><div class="subtotal-cell" data-pid="${p.id}">${sub>0?fmt(sub):'—'}</div></td>
-      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" style="color:var(--teal-dark);" /></td>
-      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商退還的金額，會從已付訂金扣除" data-pid="${p.id}" data-pf="refund" value="${esc(p.refund)}" style="color:var(--teal-dark);" /></td>
-      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商額外多收的金額，會加到已付訂金" data-pid="${p.id}" data-pf="extraCharge" value="${esc(p.extraCharge)}" style="color:var(--red);" /></td>
-      <td><div class="subtotal-cell remain-cell" data-pid="${p.id}" style="color:${remain>0?'var(--amber)':'var(--teal-dark)'};">${sub>0||dep!==0?fmt(remain):'—'}</div></td>
+      <td><div class="sg-cell c-paid"><span class="sg">＋</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="已經付出去的錢，可輸入算式，例如 8000+3216" data-pid="${p.id}" data-pf="deposit" value="${esc(p.deposit)}" /></div></td>
+      <td><div class="sg-cell c-refund"><span class="sg">−</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商退還的金額，會從已付訂金扣除" data-pid="${p.id}" data-pf="refund" value="${esc(p.refund)}" /></div></td>
+      <td><div class="sg-cell c-extra"><span class="sg">＋</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="廠商額外多收的金額，會加到已付訂金" data-pid="${p.id}" data-pf="extraCharge" value="${esc(p.extraCharge)}" /></div></td>
+      <td><div class="subtotal-cell remain-cell" data-pid="${p.id}"></div></td>
       <td><input class="td-input mq-field" placeholder="備註…" data-pid="${p.id}" data-pf="note" value="${esc(p.note)}" style="font-size:12px;" /></td>
       <td><div class="row-actions">
         ${moveSelectHtml('purchase','data-pid="'+p.id+'"')}
@@ -1963,6 +2080,29 @@ function persistCompares(){
   catch(e){ alert('本機儲存空間不足，最新的變更（可能是照片）未能儲存。建議刪除部分比價照片。'); }
 }
 
+/* 哪些比價商品是展開的：只記在這台裝置，不會同步到雲端 */
+const cmpOpen = new Set();
+try{ JSON.parse(localStorage.getItem('ar-cmp-open')||'[]').forEach(id=>cmpOpen.add(id)); }catch(e){}
+function persistCmpOpen(){
+  try{ localStorage.setItem('ar-cmp-open',JSON.stringify([...cmpOpen].filter(id=>compares.some(c=>c.id===id)))); }catch(e){}
+}
+function updateCmpToggleAll(){
+  const btn=document.getElementById('cmpToggleAllBtn');
+  const allOpen=compares.length>0 && compares.every(c=>cmpOpen.has(c.id));
+  btn.textContent = allOpen ? '全部收合' : '全部展開';
+  btn.disabled = !compares.length;
+}
+function setCmpOpen(cid, open){
+  if(open) cmpOpen.add(cid); else cmpOpen.delete(cid);
+  const g=document.querySelector('.cmp-group[data-cid="'+cid+'"]');
+  if(g){
+    g.classList.toggle('open', open);
+    const t=g.querySelector('.cmp-toggle'); if(t) t.setAttribute('aria-expanded', String(open));
+  }
+  persistCmpOpen(); updateCmpToggleAll();
+  if(open) refreshMarquee();            /* 收合時欄位沒有寬度，展開後要重新判斷字有沒有被切掉 */
+}
+
 function cmpMediaHtml(c,it){
   const inner =
     (it.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${it.imgData}" alt="比價照片" /><button type="button" class="img-remove-btn cmp-img-remove" data-cid="${c.id}" data-iid="${it.id}" title="移除照片">✕</button></div>`:'')
@@ -1998,8 +2138,11 @@ function cmpItemHtml(c,it){
 
 function cmpGroupHtml(c){
   return `
-    <div class="cmp-group" data-cid="${c.id}">
+    <div class="cmp-group${cmpOpen.has(c.id)?' open':''}" data-cid="${c.id}">
       <div class="cmp-group-head">
+        <button type="button" class="cmp-toggle" data-cid="${c.id}" aria-expanded="${cmpOpen.has(c.id)}" title="展開／收合">
+          <span class="cmp-chev">▶</span><span class="cmp-title-text"></span>
+        </button>
         <input class="cmp-title-input mq-field" placeholder="商品名稱，例：55吋電視" data-cid="${c.id}" data-cf="title" value="${esc(c.title)}" />
         <div class="cmp-meta"></div>
         <div class="cmp-head-btns">
@@ -2023,6 +2166,7 @@ const CMP_EMPTY_HTML = `
 
 function buildCompare(){
   const host=document.getElementById('compareList');
+  updateCmpToggleAll();
   if(!compares.length){ host.innerHTML=CMP_EMPTY_HTML; return; }
   host.innerHTML=compares.map(cmpGroupHtml).join('');
   compares.forEach(c=>updateCompareGroup(c.id));
@@ -2034,6 +2178,9 @@ function updateCompareGroup(cid){
   const c=findCmpGroup(cid); if(!c) return;
   const groupEl=document.querySelector('.cmp-group[data-cid="'+cid+'"]'); if(!groupEl) return;
   const st=compareStats(c);
+
+  const tt=groupEl.querySelector('.cmp-title-text');
+  if(tt){ tt.textContent=c.title||'未命名商品'; tt.classList.toggle('empty', !c.title); }
 
   const meta=groupEl.querySelector('.cmp-meta');
   if(meta){
@@ -2122,6 +2269,14 @@ compareList.addEventListener('paste',e=>{
     .catch(err=>alert('照片貼上失敗：'+err.message));
 });
 compareList.addEventListener('click',e=>{
+  /* 展開／收合：收合時點標題列任何地方都會展開，展開後點 ▶ 收合 */
+  const tgl=e.target.closest('.cmp-toggle');
+  const head=e.target.closest('.cmp-group-head');
+  const grp=head && head.closest('.cmp-group');
+  if(tgl || (grp && !grp.classList.contains('open'))){
+    const cid=(tgl||grp).dataset.cid;
+    setCmpOpen(cid, !cmpOpen.has(cid)); return;
+  }
   /* 放大預覽 */
   if(e.target.classList.contains('src-thumb')){ openImagePreview(e.target.src); return; }
   /* 移除照片 */
@@ -2188,12 +2343,18 @@ compareList.addEventListener('click',e=>{
     const c=findCmpGroup(delGroup.dataset.cid); if(!c) return;
     if(!confirm('確定刪除「'+(c.title||'這個比價商品')+'」以及底下所有店家報價嗎？')) return;
     compares=compares.filter(x=>x.id!==c.id);
+    cmpOpen.delete(c.id); persistCmpOpen();
     buildCompare(); persistCompares(); return;
   }
 });
+document.getElementById('cmpToggleAllBtn').addEventListener('click',()=>{
+  const open=!compares.every(c=>cmpOpen.has(c.id));
+  compares.forEach(c=>{ if(open) cmpOpen.add(c.id); else cmpOpen.delete(c.id); });
+  persistCmpOpen(); buildCompare();
+});
 document.getElementById('addCompareBtn').addEventListener('click',()=>{
   const c=newCompare();
-  compares.push(c);
+  compares.push(c); cmpOpen.add(c.id); persistCmpOpen();
   buildCompare(); persistCompares();
   const el=document.querySelector('.cmp-group[data-cid="'+c.id+'"] .cmp-title-input');
   if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); el.focus(); }
@@ -2219,7 +2380,8 @@ function addCompareFrom(title, store, price, url, imgData){
     { id:uid(), store:store||'', price:price||'', note:'', url:url||'', imgData:imgData||'' },
     newCompareItem()
   ]};
-  compares.push(g); buildCompare(); persistCompares();
+  compares.push(g); cmpOpen.add(g.id); persistCmpOpen();
+  buildCompare(); persistCompares();
   const el=document.querySelector('.cmp-group[data-cid="'+g.id+'"]');
   if(el) el.scrollIntoView({block:'center',behavior:'smooth'});
 }
