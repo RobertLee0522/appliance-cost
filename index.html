@@ -730,7 +730,7 @@
             已購買清單
             <span class="chip teal">訂金／尾款追蹤</span>
           </div>
-          <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。退費／加收會自動連動剩餘尾款與總花費。<span id="purchaseExtraNote"></span></div>
+          <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。退費是退給你的錢，會從總花費扣掉；加收會加進總花費；兩者都不影響剩餘尾款。<span id="purchaseExtraNote"></span></div>
           <div class="money-legend">
             <span style="color:var(--text2);">付出去是 −、退回來是 ＋：</span>
             <span class="c-paid">− 已付訂金</span>
@@ -747,7 +747,7 @@
           <span id="purchaseGrandTotal" class="money">NT$0</span>
         </div>
         <div class="stat-inline">
-          <span>已付款</span>
+          <span title="已付訂金－退費＋加收">實際已花</span>
           <span id="purchasePaidTotal" class="money" style="color:var(--teal);">NT$0</span>
         </div>
         <div class="stat-inline">
@@ -936,7 +936,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v3.3';
+const APP_VERSION = 'v3.4';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1786,20 +1786,24 @@ let purchases = [];
 const newPurchase = () => ({ id:uid(), name:'', qty:1, price:'', deposit:'', refund:'', extraCharge:'', note:'' });
 function persistPurchases(){ try{ localStorage.setItem('ar-purchases',JSON.stringify(purchases)); }catch(e){} }
 
-/* 淨已付金額＝已付訂金－退費＋加收（廠商多收的費用），
-   退費會從已付訂金扣除，加收則會加上去，兩者都會連動剩餘尾款與總花費。 */
+/* 實際花費（淨已付）＝已付訂金－退費＋加收。
+   退費是廠商退給自己的錢（賺回來的），加收是額外多付掉的錢，兩者都只影響實際花費。 */
 function netPaid(p){
   return (parseFloat(p.deposit)||0) - (parseFloat(p.refund)||0) + (parseFloat(p.extraCharge)||0);
 }
+/* 剩餘尾款＝總價－已付訂金：退費／加收不會讓尾款變多或變少 */
+const depositOf = p => parseFloat(p.deposit)||0;
+const owedOf    = p => (parseFloat(p.qty)||0)*(parseFloat(p.price)||0) - depositOf(p);
 
-/* 已購買清單的總額：總價、已付（淨）、待付尾款 */
+/* 已購買清單的總額：總價、實際花費、待付尾款 */
 function getPurchaseSums(){
-  let total=0, deposit=0;
+  let total=0, deposit=0, remain=0;
   purchases.forEach(p=>{
     total   += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
     deposit += netPaid(p);
+    remain  += Math.max(0, owedOf(p));
   });
-  return { total, deposit, remain: total-deposit };
+  return { total, deposit, remain };
 }
 
 /* 帶正負號的金額：＋NT$1,000／−NT$1,000 */
@@ -1817,24 +1821,23 @@ function setRemainCell(el, sub, paid){
 }
 
 function updatePurchaseTotals(){
-  let total=0, deposit=0, rawDeposit=0, refund=0, extraCharge=0;
+  let total=0, deposit=0, rawDeposit=0, refund=0, extraCharge=0, remainAll=0;
   purchases.forEach(p=>{
     const sub=(parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
-    const dep=netPaid(p);
-    total+=sub; deposit+=dep;
-    rawDeposit+=parseFloat(p.deposit)||0;
+    total+=sub; deposit+=netPaid(p);
+    rawDeposit+=depositOf(p);
     refund+=parseFloat(p.refund)||0; extraCharge+=parseFloat(p.extraCharge)||0;
+    remainAll+=Math.max(0, owedOf(p));
     const s=document.querySelector('.subtotal-cell[data-pid="'+p.id+'"]');
     if(s) s.textContent=sub>0?fmt(sub):'—';
     const rm=document.querySelector('.remain-cell[data-pid="'+p.id+'"]');
-    if(rm) setRemainCell(rm, sub, dep);
+    if(rm) setRemainCell(rm, sub, depositOf(p));
   });
-  const remainAll=total-deposit;
   document.getElementById('purchaseTotalCell').textContent       = fmt(total);
   document.getElementById('purchaseDepositCell').textContent     = signed('−',rawDeposit);
   document.getElementById('purchaseRefundCell').textContent      = signed('＋',refund);
   document.getElementById('purchaseExtraChargeCell').textContent = signed('−',extraCharge);
-  setRemainCell(document.getElementById('purchaseRemainCell'), total, deposit);
+  setRemainCell(document.getElementById('purchaseRemainCell'), total, rawDeposit);
   document.getElementById('purchaseGrandTotal').textContent  = fmt(total);
   document.getElementById('purchasePaidTotal').textContent   = fmt(deposit);
   document.getElementById('purchaseRemainTotal').textContent = fmt(remainAll);
@@ -1875,10 +1878,11 @@ function purchaseRowId(p){
 
 function getSpendBreakdown(){
   const boughtIds=new Set();
-  let boughtTotal=0, paid=0;
+  let boughtTotal=0, paid=0, toPay=0;
   purchases.forEach(p=>{
     boughtTotal += (parseFloat(p.qty)||0)*(parseFloat(p.price)||0);
     paid        += netPaid(p);
+    toPay       += Math.max(0, owedOf(p));          /* 逐筆算尾款，付超過的那筆不會抵掉別筆 */
     const rid=purchaseRowId(p); if(rid) boughtIds.add(rid);
   });
 
@@ -1897,7 +1901,6 @@ function getSpendBreakdown(){
     extraCount++;
   });
 
-  const toPay = Math.max(0, boughtTotal-paid);
   return { paid, boughtTotal, toPay, notYet, notYetCount, extra, extraCount,
            willPay: toPay+notYet, grand: paid+toPay+notYet };
 }
@@ -1961,7 +1964,7 @@ function refreshStatus(){
       if(st==='notyet'){ rc.notyet++; rc.notyetAmt+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); }
     } else {
       let total=0, paid=0;
-      ps.forEach(p=>{ total+=purchaseSub(p); paid+=netPaid(p); });
+      ps.forEach(p=>{ total+=purchaseSub(p); paid+=depositOf(p); });
       st=payStatus(total,paid); if(st==='none') st='unpaid';   /* 已帶入但還沒填金額，也算還沒付款 */
       owe=Math.max(0,total-paid);
       rc.bought++; rc[st]++;
@@ -1973,7 +1976,7 @@ function refreshStatus(){
   const pc={};
   const opts=linkOptions();
   purchases.forEach(p=>{
-    const sub=purchaseSub(p), paid=netPaid(p), st=payStatus(sub,paid);
+    const sub=purchaseSub(p), paid=depositOf(p), st=payStatus(sub,paid);
     pc[st]=(pc[st]||0)+1;
     const tag=document.querySelector('.st-tag[data-pst="'+p.id+'"]');
     if(tag){
