@@ -253,6 +253,48 @@
   .buy-btn:hover { text-decoration:underline; }
   .buy-link { color:var(--indigo-dark); }
   .buy-mark { color:var(--teal-dark); }
+  /* 已購買「付款狀態／對應採購表」欄 */
+  .pay-cell { display:flex; flex-direction:column; align-items:flex-start; gap:5px; padding:8px 12px; }
+  .link-row { display:flex; align-items:center; gap:4px; max-width:100%; }
+
+  /* 許願表：可收合的卡片清單 */
+  .wish-list { display:flex; flex-direction:column; gap:8px; }
+  .wish-item { border:0.5px solid var(--border); border-radius:var(--radius); background:var(--bg); overflow:hidden; transition:box-shadow .15s, border-color .15s; }
+  .wish-item.open { border-color:var(--border2); box-shadow:var(--shadow); }
+  .wish-head { display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; outline:none; }
+  .wish-head:hover, .wish-head:focus-visible { background:color-mix(in srgb, var(--amber) 6%, var(--bg)); }
+  .wish-head .cmp-chev { color:var(--amber-dark); background:var(--amber-light); }
+  .wish-item.open .cmp-chev { transform:rotate(90deg); }
+  .wish-no { flex-shrink:0; width:18px; text-align:center; font-size:11px; color:var(--text3); font-variant-numeric:tabular-nums; }
+  .wish-thumb { flex-shrink:0; width:38px; height:38px; border-radius:8px; object-fit:cover; border:0.5px solid var(--border2); }
+  .wish-sum { flex:1 1 auto; min-width:0; }
+  .wish-name { font-size:14px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wish-name.empty { color:var(--text3); font-weight:500; }
+  .wish-meta { margin-top:2px; font-size:11.5px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wish-meta .pri { color:var(--amber); letter-spacing:-1px; }
+  .wish-amt { flex-shrink:0; text-align:right; }
+  .wish-subtotal { font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .wish-subtotal.empty { color:var(--text3); font-weight:500; }
+  .wish-annual { font-size:11px; color:var(--amber); font-variant-numeric:tabular-nums; }
+  .wish-body { display:none; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px 12px; padding:12px 14px 14px; border-top:0.5px solid var(--border); background:var(--bg2); }
+  .wish-item.open .wish-body { display:grid; }
+  .wf { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .wf > span:first-child { font-size:11px; font-weight:600; color:var(--text2); }
+  .wf.full { grid-column:1/-1; }
+  .wish-body .td-input, .wish-body .name-ta { background:var(--bg); border:0.5px solid var(--border2); border-radius:var(--radius-sm); padding:8px 10px; font-size:14px; }
+  .wish-body .td-input:focus, .wish-body .name-ta:focus { border-color:var(--teal); box-shadow:var(--ring); }
+  .wish-body .qty-ctrl { justify-content:flex-start; gap:4px; }
+  .wish-body .qty-num { height:32px; }
+  .wish-body .subtotal-cell { text-align:left; padding:8px 0; }
+  .wish-body .src-wrap { gap:6px; }
+  .wish-body .src-link { padding:0; }
+  .wish-body .img-btn-row, .wish-body .img-thumb-wrap { margin:0; }
+  .wish-body .src-wrap > .src-thumb { margin:0; }
+  .wish-actions { flex-direction:row; justify-content:flex-end; align-items:center; gap:8px; padding-top:4px; }
+  .wish-actions .move-select { max-width:none; }
+  .wish-foot { display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; padding:10px 14px; border-radius:var(--radius); background:var(--bg2); font-size:13px; font-weight:600; color:var(--text2); }
+  .wish-foot .money { font-size:16px; font-weight:700; color:var(--text); }
+
   /* 採購表：點欄位標題排序 */
   th.sortable { cursor:pointer; user-select:none; -webkit-user-select:none; transition:color .15s, background .15s; }
   th.sortable:hover { color:var(--text); background:var(--bg3); }
@@ -467,6 +509,10 @@
     .cmp-title-input { flex:1 1 110px; font-size:14.5px; padding:5px 6px; }
     .cmp-head-btns { order:2; }
     .cmp-meta { order:3; flex:1 1 100%; padding:0 6px 2px; }
+    /* 許願表：手機上展開的表單改成兩欄，摘要列收緊 */
+    .wish-body { grid-template-columns:1fr 1fr; gap:9px 10px; padding:10px 11px 12px; }
+    .wish-head { gap:8px; padding:10px; }
+    .wish-no { display:none; }
   }
   /* 數量 ± 控制 */
   .qty-ctrl { display:flex; align-items:center; justify-content:flex-end; }
@@ -711,7 +757,7 @@
             許願表
             <span class="chip amber">家具尚缺清單</span>
           </div>
-          <div class="sect-sub">記錄想買還沒買的項目，預估金額僅供參考，不影響採購預算。</div>
+          <div class="sect-sub">記錄想買還沒買的項目，預估金額僅供參考，不影響採購預算。點一下項目展開編輯細節。</div>
         </div>
       </div>
       <div class="sect-actions">
@@ -719,39 +765,15 @@
           <span>預估總額</span>
           <span id="wishTotal" class="money" style="color:var(--teal);">NT$0</span>
         </div>
+        <button class="btn" id="wishToggleAllBtn">全部展開</button>
         <button class="btn primary" id="addWishBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           新增
         </button>
       </div>
     </div>
-    <div class="table-card table-inner">
-      <table style="min-width:1080px;">
-        <thead>
-          <tr>
-            <th style="width:36px;">#</th>
-            <th style="min-width:150px;">項目名稱</th>
-            <th style="width:80px;">類別</th>
-            <th style="width:90px;text-align:right;">數量</th>
-            <th style="width:110px;text-align:right;">單價（元）</th>
-            <th style="width:100px;text-align:right;">小計</th>
-            <th style="width:110px;text-align:right;">年費（元）</th>
-            <th style="width:80px;text-align:center;">優先度</th>
-            <th style="min-width:180px;">來源 / 網址</th>
-            <th style="min-width:100px;">備註</th>
-            <th style="width:128px;"></th>
-          </tr>
-        </thead>
-        <tbody id="wishBody"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="5"><div class="tf-label">預估合計</div></td>
-            <td><div class="tf-total" id="wishTotalCell" style="text-align:right;">NT$0</div></td>
-            <td colspan="5"></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+    <div class="wish-list" id="wishBody"></div>
+    <div class="wish-foot"><span>預估合計</span><span id="wishTotalCell" class="money">NT$0</span></div>
   </div>
 
   <!-- 已購買清單 -->
@@ -764,7 +786,7 @@
             已購買清單
             <span class="chip teal">訂金／尾款追蹤</span>
           </div>
-          <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。退費是退給你的錢，會從總花費扣掉；加收會加進總花費；兩者都不影響剩餘尾款。<span id="purchaseExtraNote"></span></div>
+          <div class="sect-sub">記錄已下訂或已購買的項目。可從其他清單用該列的「移至…」下拉帶入，不用重打。退費是退給你的錢，會從總花費扣掉；加收會加進總花費；兩者都不影響剩餘尾款。<b>點欄位標題可以排序</b>。<span id="purchaseExtraNote"></span></div>
           <div class="money-legend">
             <span style="color:var(--text2);">付出去是 −、退回來是 ＋：</span>
             <span class="c-paid">− 已付訂金</span>
@@ -795,18 +817,19 @@
       </div>
     </div>
     <div class="table-card table-inner">
-      <table style="min-width:1260px;">
+      <table style="min-width:1400px;">
         <thead>
           <tr>
             <th style="width:36px;">#</th>
-            <th style="min-width:150px;">項目名稱</th>
+            <th class="sortable" data-sort="name" style="min-width:150px;">項目名稱<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort="status" style="min-width:170px;">付款狀態／對應採購表<span class="sort-ind"></span></th>
             <th style="width:90px;text-align:right;">數量</th>
-            <th style="width:110px;text-align:right;">單價（元）</th>
-            <th style="width:110px;text-align:right;">總價</th>
-            <th class="c-paid" style="width:130px;text-align:right;">− 已付訂金（元）</th>
-            <th class="c-refund" style="width:120px;text-align:right;">＋ 退費（元）</th>
-            <th class="c-extra" style="width:120px;text-align:right;">− 加收（元）</th>
-            <th class="c-owe" style="width:130px;text-align:right;">− 尚未付（尾款）</th>
+            <th class="sortable" data-sort="price" style="width:110px;text-align:right;">單價（元）<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort="sub" style="width:110px;text-align:right;">總價<span class="sort-ind"></span></th>
+            <th class="sortable c-paid" data-sort="deposit" style="width:140px;text-align:right;">− 已付訂金（元）<span class="sort-ind"></span></th>
+            <th class="sortable c-refund" data-sort="refund" style="width:120px;text-align:right;">＋ 退費（元）<span class="sort-ind"></span></th>
+            <th class="sortable c-extra" data-sort="extra" style="width:120px;text-align:right;">− 加收（元）<span class="sort-ind"></span></th>
+            <th class="sortable c-owe" data-sort="owe" style="width:140px;text-align:right;">− 尚未付（尾款）<span class="sort-ind"></span></th>
             <th style="min-width:100px;">備註</th>
             <th style="width:128px;"></th>
           </tr>
@@ -814,7 +837,7 @@
         <tbody id="purchaseBody"></tbody>
         <tfoot>
           <tr>
-            <td colspan="4"><div class="tf-label">合計</div></td>
+            <td colspan="5"><div class="tf-label">合計</div></td>
             <td><div class="tf-total" id="purchaseTotalCell" style="text-align:right;font-size:14px;">NT$0</div></td>
             <td><div class="tf-total c-paid" id="purchaseDepositCell" style="text-align:right;font-size:14px;">NT$0</div></td>
             <td><div class="tf-total c-refund" id="purchaseRefundCell" style="text-align:right;font-size:14px;">NT$0</div></td>
@@ -970,7 +993,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v3.6';
+const APP_VERSION = 'v3.7';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1342,57 +1365,65 @@ tbody.addEventListener('change',e=>{
   persist();
 });
 
-/* ══ 採購表排序：點欄位標題 ══
+/* ══ 表格排序：點欄位標題（採購表、已購買清單共用） ══
    第一下排一個方向、第二下反過來、第三下回到新增順序。
    排序會直接改變清單順序並存起來（雲端同步也是這個順序），之後改金額不會自動跳位。
-   兩張表是用 id 對應，排序不影響和已購買清單的連結。 */
-const ST_RANK = { notyet:0, unpaid:1, partial:2, paid:3 };
-const ROW_SORTS = {
-  name:   { first:'asc',  text:['名稱 A→Z','名稱 Z→A'],                   val:r=>String(r.name||'').trim()||null },
-  status: { first:'asc',  text:['尚未購買排最上面','已付清排最上面'],       val:(r,i)=>i.st in ST_RANK ? ST_RANK[i.st] : null },
-  price:  { first:'desc', text:['單價由高到低','單價由低到高'],             val:r=>parseFloat(r.price)||null },
-  sub:    { first:'desc', text:['採購小計由高到低','採購小計由低到高'],     val:(r,i)=>i.plan||null },
-  owe:    { first:'desc', text:['還要付由多到少','還要付由少到多'],         val:(r,i)=>i.st==='none' ? null : i.owe },
-  annual: { first:'desc', text:['每年花費由高到低','每年花費由低到高'],     val:r=>parseFloat(r.annualCost)||null }
-};
-let rowSort={ key:'', step:0 };      /* step：1＝第一個方向、2＝反方向、0＝新增順序 */
+   兩張表是用 id 對應，排序不影響彼此的連結。
+   defs[key]：first＝第一下的方向、text＝提示文字、val(item, ctx)＝排序用的值（null＝排最後） */
 const nameCollator = new Intl.Collator('zh-Hant-TW', { numeric:true, sensitivity:'base' });
-
-function sortRows(key){
-  rowSort = rowSort.key===key ? { key, step:(rowSort.step+1)%3 } : { key, step:1 };
-  const def=ROW_SORTS[key];
-  if(rowSort.step===0){
-    rows.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);   /* id 開頭是建立時間，排回來就是新增順序 */
-  } else {
-    const dir = (rowSort.step===1) === (def.first==='asc') ? 1 : -1;
-    const info=rowPayInfo();
-    const val=r=>def.val(r, info.get(r.id));
-    rows.sort((a,b)=>{                                  /* 沒有值的永遠排最後；同值維持原順序 */
-      const va=val(a), vb=val(b);
-      if(va===null||vb===null) return va===null ? (vb===null?0:1) : -1;
-      const c = typeof va==='string' ? nameCollator.compare(va,vb) : va-vb;
-      return c*dir;
+function makeTableSorter({ section, list, defs, ctx, rebuild }){
+  let state={ key:'', step:0 };      /* step：1＝第一個方向、2＝反方向、0＝新增順序 */
+  const ths=()=>document.querySelectorAll(section+' th.sortable');
+  function updateHeaders(){
+    ths().forEach(th=>{
+      const on = th.dataset.sort===state.key && state.step!==0;
+      th.classList.toggle('sorted', on);
+      th.classList.remove('asc','desc');
+      if(on){
+        const asc = (state.step===1) === (defs[state.key].first==='asc');
+        th.classList.add(asc?'asc':'desc');
+        th.title='再點一下'+(state.step===1?'反過來排':'回到新增順序');
+      } else th.title='點一下排序';
     });
   }
-  buildTable(); updateTotals(); persist();
-  updateSortHeaders();
-  toast(rowSort.step===0 ? '回到新增順序' : '已依'+def.text[rowSort.step-1]);
+  function sortBy(key){
+    state = state.key===key ? { key, step:(state.step+1)%3 } : { key, step:1 };
+    const def=defs[key], arr=list();
+    if(state.step===0){
+      arr.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);    /* id 開頭是建立時間，排回來就是新增順序 */
+    } else {
+      const dir = (state.step===1) === (def.first==='asc') ? 1 : -1;
+      const c0 = ctx ? ctx() : null;
+      const val = x => def.val(x, c0);
+      arr.sort((a,b)=>{                                 /* 沒有值的永遠排最後；同值維持原順序 */
+        const va=val(a), vb=val(b);
+        if(va===null||vb===null) return va===null ? (vb===null?0:1) : -1;
+        const c = typeof va==='string' ? nameCollator.compare(va,vb) : va-vb;
+        return c*dir;
+      });
+    }
+    rebuild();
+    updateHeaders();
+    toast(state.step===0 ? '回到新增順序' : '已依'+def.text[state.step-1]);
+  }
+  ths().forEach(th=>th.addEventListener('click',()=>sortBy(th.dataset.sort)));
+  updateHeaders();
 }
-function updateSortHeaders(){
-  document.querySelectorAll('#sec-buy th.sortable').forEach(th=>{
-    const on = th.dataset.sort===rowSort.key && rowSort.step!==0;
-    th.classList.toggle('sorted', on);
-    th.classList.remove('asc','desc');
-    if(on){
-      const def=ROW_SORTS[rowSort.key];
-      const asc = (rowSort.step===1) === (def.first==='asc');
-      th.classList.add(asc?'asc':'desc');
-      th.title='再點一下'+(rowSort.step===1?'反過來排':'回到新增順序');
-    } else th.title='點一下排序';
-  });
-}
-document.querySelectorAll('#sec-buy th.sortable').forEach(th=>th.addEventListener('click',()=>sortRows(th.dataset.sort)));
-updateSortHeaders();
+const numOrNull = v => parseFloat(v)||null;
+
+const ST_RANK = { notyet:0, unpaid:1, partial:2, paid:3 };
+makeTableSorter({
+  section:'#sec-buy', list:()=>rows, ctx:()=>rowPayInfo(),
+  rebuild:()=>{ buildTable(); updateTotals(); persist(); },
+  defs:{
+    name:   { first:'asc',  text:['名稱 A→Z','名稱 Z→A'],                   val:r=>String(r.name||'').trim()||null },
+    status: { first:'asc',  text:['尚未購買排最上面','已付清排最上面'],       val:(r,m)=>{ const st=m.get(r.id).st; return st in ST_RANK ? ST_RANK[st] : null; } },
+    price:  { first:'desc', text:['單價由高到低','單價由低到高'],             val:r=>numOrNull(r.price) },
+    sub:    { first:'desc', text:['採購小計由高到低','採購小計由低到高'],     val:(r,m)=>m.get(r.id).plan||null },
+    owe:    { first:'desc', text:['還要付由多到少','還要付由少到多'],         val:(r,m)=>{ const i=m.get(r.id); return i.st==='none' ? null : i.owe; } },
+    annual: { first:'desc', text:['每年花費由高到低','每年花費由低到高'],     val:r=>numOrNull(r.annualCost) }
+  }
+});
 
 document.getElementById('addBtn').addEventListener('click',()=>{
   rows.push(newRow()); buildTable(); updateTotals(); persist();
@@ -1725,54 +1756,108 @@ function updateWishTotal(){
     const sub=(parseFloat(w.qty)||0)*(parseFloat(w.price)||0);
     const s=document.querySelector('.subtotal-cell[data-wid="'+w.id+'"]');
     if(s) s.textContent=sub>0?fmt(sub):'—';
+    updateWishHead(w);
   });
 }
 
-function buildWishTable(){
-  const tbody=document.getElementById('wishBody');
-  tbody.innerHTML='';
-  wishes.forEach((w,i)=>{
-    const sub=(parseFloat(w.qty)||0)*(parseFloat(w.price)||0);
-    const tr=document.createElement('tr');
-    const catOpts=CATS.map(c=>`<option${c===w.category?' selected':''}>${c}</option>`).join('');
-    const priOpts=PRIS.map(p=>`<option${p===w.priority?' selected':''}>${p}</option>`).join('');
-    tr.innerHTML=`
-      <td><div class="td-num">${i+1}</div></td>
-      <td style="min-width:160px;">
-        <textarea class="name-ta" placeholder="例：餐桌、窗簾、床架" data-wid="${w.id}" data-wf="name" rows="1">${esc(w.name)}</textarea>
-      </td>
-      <td><select class="td-input" data-wid="${w.id}" data-wf="category" style="cursor:pointer;">${catOpts}</select></td>
-      <td>
+/* 許願表每一項：上面一行是摘要（點一下展開／收合），展開後是編輯表單 */
+const wishOpen = new Set();
+try{ JSON.parse(localStorage.getItem('ar-wish-open')||'[]').forEach(id=>wishOpen.add(id)); }catch(e){}
+function persistWishOpen(){
+  try{ localStorage.setItem('ar-wish-open',JSON.stringify([...wishOpen].filter(id=>wishes.some(w=>w.id===id)))); }catch(e){}
+}
+const fitTa = ta => { ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; };
+const CALC_TIP = '可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出';
+
+function wishItemHtml(w,i){
+  const open=wishOpen.has(w.id);
+  const sub=(parseFloat(w.qty)||0)*(parseFloat(w.price)||0);
+  const catOpts=CATS.map(c=>`<option${c===w.category?' selected':''}>${c}</option>`).join('');
+  const priOpts=PRIS.map(p=>`<option${p===w.priority?' selected':''}>${p}</option>`).join('');
+  return `
+  <div class="wish-item${open?' open':''}" data-item-wid="${w.id}">
+    <div class="wish-head" data-toggle-wid="${w.id}" role="button" tabindex="0" aria-expanded="${open}">
+      <span class="cmp-chev">▶</span>
+      <span class="wish-no">${i+1}</span>
+      ${w.imgData?`<img class="wish-thumb" src="${w.imgData}" alt="" />`:''}
+      <div class="wish-sum"><div class="wish-name"></div><div class="wish-meta"></div></div>
+      <div class="wish-amt"><div class="wish-subtotal"></div><div class="wish-annual"></div></div>
+    </div>
+    <div class="wish-body">
+      <label class="wf full"><span>項目名稱</span>
+        <textarea class="name-ta" placeholder="例：餐桌、窗簾、床架" data-wid="${w.id}" data-wf="name" rows="1">${esc(w.name)}</textarea></label>
+      <label class="wf"><span>類別</span><select class="td-input" data-wid="${w.id}" data-wf="category">${catOpts}</select></label>
+      <label class="wf"><span>優先度</span><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></label>
+      <div class="wf"><span>數量</span>
         <div class="qty-ctrl">
           <button class="wish-qty-btn" data-wid="${w.id}" data-action="minus">−</button>
           <input class="td-input qty-num" type="number" min="1" step="1" data-wid="${w.id}" data-wf="qty" value="${esc(w.qty)}" />
           <button class="wish-qty-btn" data-wid="${w.id}" data-action="plus">+</button>
-        </div>
-      </td>
-      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-wid="${w.id}" data-wf="price" value="${esc(w.price)}" /></td>
-      <td><div class="subtotal-cell" data-wid="${w.id}">${sub>0?fmt(sub):'—'}</div></td>
-      <td><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="可輸入算式，例如 8000+3216，按 Enter 或點到別處即算出" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></td>
-      <td><select class="td-input pri-select" data-wid="${w.id}" data-wf="priority">${priOpts}</select></td>
-      <td style="min-width:180px;"><div class="src-wrap">
-        <input class="td-input mq-field" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" style="font-size:13px;" />
-        <input class="td-input url-input mq-field" placeholder="https://…" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12px;color:var(--text2);" />
+        </div></div>
+      <label class="wf"><span>單價（元）</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="${CALC_TIP}" data-wid="${w.id}" data-wf="price" value="${esc(w.price)}" /></label>
+      <div class="wf"><span>小計</span><div class="subtotal-cell" data-wid="${w.id}">${sub>0?fmt(sub):'—'}</div></div>
+      <label class="wf"><span>年費（元）</span><input class="td-input calc-input" type="text" inputmode="text" placeholder="0" title="${CALC_TIP}" data-wid="${w.id}" data-wf="annualCost" value="${esc(w.annualCost)}" style="color:var(--amber);" /></label>
+      <div class="wf full"><span>來源 / 網址</span><div class="src-wrap">
+        <input class="td-input mq-field" placeholder="來源名稱" data-wid="${w.id}" data-wf="srcLabel" value="${esc(w.srcLabel)}" />
+        <input class="td-input url-input mq-field" placeholder="https://…" data-wid="${w.id}" data-wf="srcUrl" value="${esc(w.srcUrl)}" style="font-size:12.5px;color:var(--text2);" />
         ${w.srcUrl?`<a class="src-link" href="${esc(w.srcUrl)}" target="_blank" rel="noopener">${LSVG} ${esc(w.srcLabel||w.srcUrl)}</a>`:''}
         <div class="img-btn-row">
           <label class="img-upload-btn">📷 上傳<input type="file" accept="image/*" class="img-upload-input" data-wid="${w.id}" hidden /></label>
           <button type="button" class="img-upload-btn img-paste-btn" data-wid="${w.id}" title="從剪貼簿貼上圖片（複製截圖後點此，或直接在欄位內按 Ctrl+V）">📋 貼上</button>
         </div>
         ${w.imgData?`<div class="img-thumb-wrap"><img class="src-thumb" src="${w.imgData}" alt="上傳圖片" /><button type="button" class="img-remove-btn" data-wid="${w.id}" title="移除圖片">✕</button></div>`:srcThumbHtml(w.srcUrl)}
-      </div></td>
-      <td><input class="td-input mq-field" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" style="font-size:12px;" /></td>
-      <td><div class="row-actions">
+      </div></div>
+      <label class="wf full"><span>備註</span><input class="td-input mq-field" placeholder="備註…" data-wid="${w.id}" data-wf="note" value="${esc(w.note)}" /></label>
+      <div class="wf full wish-actions">
         ${moveSelectHtml('wish','data-wid="'+w.id+'"')}
-        <button class="del-btn" data-wid="${w.id}" title="刪除">${DSVG}</button>
-      </div></td>`;
-    tbody.appendChild(tr);
-    const ta=tr.querySelector('.name-ta');
-    ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px';
-  });
+        <button class="btn danger del-btn-wish" data-wid="${w.id}" title="刪除這筆許願">${DSVG} 刪除</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* 摘要列：名稱、類別・優先度・數量×單價・來源、小計／年費（打字時即時更新） */
+function updateWishHead(w){
+  const item=document.querySelector('.wish-item[data-item-wid="'+w.id+'"]'); if(!item) return;
+  const name=String(w.name||'').trim().split('\n')[0].trim();
+  const nm=item.querySelector('.wish-name');
+  nm.textContent=name||'未命名項目'; nm.classList.toggle('empty', !name);
+  const price=parseFloat(w.price)||0, sub=(parseFloat(w.qty)||0)*price, annual=parseFloat(w.annualCost)||0;
+  item.querySelector('.wish-meta').innerHTML = [
+    esc(w.category||''),
+    `<span class="pri">${esc(w.priority||'')}</span>`,
+    price>0 ? (w.qty||1)+' × '+fmt(price) : '未填單價',
+    w.srcLabel ? esc(w.srcLabel) : ''
+  ].filter(Boolean).join(' · ');
+  const st=item.querySelector('.wish-subtotal');
+  st.textContent = sub>0 ? fmt(sub) : '—'; st.classList.toggle('empty', !(sub>0));
+  item.querySelector('.wish-annual').textContent = annual>0 ? '年費 '+fmt(annual) : '';
+}
+
+function setWishOpen(wid, open){
+  if(open) wishOpen.add(wid); else wishOpen.delete(wid);
+  const item=document.querySelector('.wish-item[data-item-wid="'+wid+'"]');
+  if(item){
+    item.classList.toggle('open', open);
+    item.querySelector('.wish-head').setAttribute('aria-expanded', String(open));
+    if(open){ item.querySelectorAll('.name-ta').forEach(fitTa); refreshMarquee(); }   /* 收合時欄位沒有尺寸，展開後重算 */
+  }
+  persistWishOpen(); updateWishToggleAll();
+}
+function updateWishToggleAll(){
+  const btn=document.getElementById('wishToggleAllBtn');
+  btn.textContent = wishes.length && wishes.every(w=>wishOpen.has(w.id)) ? '全部收合' : '全部展開';
+  btn.disabled = !wishes.length;
+}
+
+function buildWishTable(){
+  const host=document.getElementById('wishBody');
+  host.innerHTML = wishes.length
+    ? wishes.map(wishItemHtml).join('')
+    : '<div class="cmp-group"><div class="cmp-empty"><span class="cmp-empty-icon">🛒</span>還沒有許願項目，按右上角「新增」開始記錄。</div></div>';
+  host.querySelectorAll('.wish-item.open .name-ta').forEach(fitTa);
   updateWishTotal();
+  updateWishToggleAll();
   refreshMarquee();
 }
 
@@ -1830,6 +1915,9 @@ wishBody.addEventListener('change',e=>{
   updateWishTotal(); persistWishes();
 });
 wishBody.addEventListener('click',e=>{
+  /* 點摘要列：展開／收合 */
+  const head=e.target.closest('.wish-head');
+  if(head){ const wid=head.dataset.toggleWid; setWishOpen(wid, !wishOpen.has(wid)); return; }
   /* 點縮圖放大預覽 */
   if(e.target.classList.contains('src-thumb')){ openImagePreview(e.target.src); return; }
   /* ± 數量 */
@@ -1857,15 +1945,27 @@ wishBody.addEventListener('click',e=>{
     return;
   }
   /* 刪除 */
-  const btn=e.target.closest('.del-btn'); if(!btn||!btn.dataset.wid)return;
+  const btn=e.target.closest('.del-btn-wish'); if(!btn||!btn.dataset.wid)return;
   if(!confirm('確定刪除這筆許願？'))return;
   wishes=wishes.filter(x=>x.id!==btn.dataset.wid);
+  wishOpen.delete(btn.dataset.wid); persistWishOpen();
   buildWishTable(); persistWishes();
 });
+wishBody.addEventListener('keydown',e=>{
+  const head=e.target.closest && e.target.closest('.wish-head');
+  if(head && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); head.click(); }
+});
+document.getElementById('wishToggleAllBtn').addEventListener('click',()=>{
+  const open=!wishes.every(w=>wishOpen.has(w.id));
+  wishes.forEach(w=>{ if(open) wishOpen.add(w.id); else wishOpen.delete(w.id); });
+  persistWishOpen(); buildWishTable();
+});
 document.getElementById('addWishBtn').addEventListener('click',()=>{
-  wishes.push(newWish()); buildWishTable(); persistWishes();
-  const inputs=document.querySelectorAll('#wishBody .td-input[data-wf="name"]');
-  if(inputs.length) inputs[inputs.length-1].focus();
+  const w=newWish();
+  wishes.push(w); wishOpen.add(w.id); persistWishOpen();
+  buildWishTable(); persistWishes();
+  const ta=document.querySelector('.name-ta[data-wid="'+w.id+'"]');
+  if(ta){ ta.scrollIntoView({block:'center',behavior:'smooth'}); ta.focus(); }
 });
 
 /* ══ 已購買清單（訂金／尾款追蹤） ══ */
@@ -2194,12 +2294,14 @@ function buildPurchaseTable(){
       <td><div class="td-num">${i+1}</div></td>
       <td style="min-width:160px;">
         <textarea class="name-ta" placeholder="例：冰箱、沙發" data-pid="${p.id}" data-pf="name" rows="1">${esc(p.name)}</textarea>
-        <div class="tag-row">
-          <span class="st-tag" data-pst="${p.id}"></span>
+      </td>
+      <td><div class="pay-cell">
+        <span class="st-tag" data-pst="${p.id}"></span>
+        <div class="link-row">
           <select class="link-select" data-link-pid="${p.id}" title="這筆對應採購表的哪一列（沒有對應＝採購表外的額外支出，例如契稅、驗屋）"></select>
           <button type="button" class="link-jump" data-link-pid="${p.id}" title="跳到採購表對應的那一列">↗</button>
         </div>
-      </td>
+      </div></td>
       <td>
         <div class="qty-ctrl">
           <button class="purchase-qty-btn" data-pid="${p.id}" data-action="minus">−</button>
@@ -2265,6 +2367,22 @@ purchaseBody.addEventListener('click',e=>{
   purchases=purchases.filter(x=>x.id!==btn.dataset.pid);
   buildPurchaseTable(); persistPurchases();
 });
+const PAY_RANK = { unpaid:0, partial:1, paid:2 };
+makeTableSorter({
+  section:'#sec-done', list:()=>purchases,
+  rebuild:()=>{ buildPurchaseTable(); persistPurchases(); },
+  defs:{
+    name:    { first:'asc',  text:['名稱 A→Z','名稱 Z→A'],                 val:p=>String(p.name||'').trim()||null },
+    status:  { first:'asc',  text:['還沒付款排最上面','已付清排最上面'],   val:p=>{ const st=payStatus(purchaseSub(p), depositOf(p)); return st in PAY_RANK ? PAY_RANK[st] : null; } },
+    price:   { first:'desc', text:['單價由高到低','單價由低到高'],         val:p=>numOrNull(p.price) },
+    sub:     { first:'desc', text:['總價由高到低','總價由低到高'],         val:p=>purchaseSub(p)||null },
+    deposit: { first:'desc', text:['已付訂金由多到少','已付訂金由少到多'], val:p=>numOrNull(p.deposit) },
+    refund:  { first:'desc', text:['退費由多到少','退費由少到多'],         val:p=>numOrNull(p.refund) },
+    extra:   { first:'desc', text:['加收由多到少','加收由少到多'],         val:p=>numOrNull(p.extraCharge) },
+    owe:     { first:'desc', text:['尚未付由多到少','尚未付由少到多'],     val:p=>purchaseSub(p)||depositOf(p) ? owedOf(p) : null }
+  }
+});
+
 /* 手動指定對應採購表的哪一列（名稱不一樣也能對起來），或設成採購表外 */
 purchaseBody.addEventListener('change',e=>{
   const sel=e.target.closest('.link-select'); if(!sel) return;
