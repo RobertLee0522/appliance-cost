@@ -257,6 +257,19 @@
   .pay-cell { display:flex; flex-direction:column; align-items:flex-start; gap:5px; padding:8px 12px; }
   .link-row { display:flex; align-items:center; gap:4px; max-width:100%; }
 
+  /* 整個區塊收合（許願表）：收合時只留標題列、件數與預估總額 */
+  .sect-fold-btn { cursor:pointer; border-radius:var(--radius); outline:none; }
+  .sect-fold-btn:hover .sect-title, .sect-fold-btn:focus-visible .sect-title { color:var(--amber-dark); }
+  .sect-chev { margin-top:6px; }
+  .sect-fold:not(.collapsed) .sect-chev { transform:rotate(90deg); }
+  .sect-fold.collapsed .sect-head { margin-bottom:0; }
+  .sect-fold.collapsed .wish-list,
+  .sect-fold.collapsed .wish-foot,
+  .sect-fold.collapsed #wishToggleAllBtn,
+  .sect-fold.collapsed .fold-hint-open,
+  .sect-fold:not(.collapsed) .fold-hint-closed { display:none; }
+  .sect-fold .sect-head-l .sect-chev { color:var(--amber-dark); background:var(--amber-light); }
+
   /* 許願表：可收合的卡片清單 */
   .wish-list { display:flex; flex-direction:column; gap:8px; }
   .wish-item { border:0.5px solid var(--border); border-radius:var(--radius); background:var(--bg); overflow:hidden; transition:box-shadow .15s, border-color .15s; }
@@ -748,16 +761,18 @@
   </div>
 
   <!-- 許願表 -->
-  <div class="card sect-card" id="sec-wish">
+  <div class="card sect-card sect-fold collapsed" id="sec-wish">
     <div class="sect-head">
-      <div class="sect-head-l">
+      <div class="sect-head-l sect-fold-btn" id="wishSectToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="wishBody" title="展開／收合許願表">
+        <span class="cmp-chev sect-chev">▶</span>
         <span class="sect-icon amber">🛒</span>
         <div>
           <div class="sect-title">
             許願表
             <span class="chip amber">家具尚缺清單</span>
+            <span class="chip" id="wishCount">0 項</span>
           </div>
-          <div class="sect-sub">記錄想買還沒買的項目，預估金額僅供參考，不影響採購預算。點一下項目展開編輯細節。</div>
+          <div class="sect-sub"><span class="fold-hint-closed">已收合，點這裡展開整個許願表。</span><span class="fold-hint-open">記錄想買還沒買的項目，預估金額僅供參考，不影響採購預算。點一下項目展開編輯細節；點標題可收合整個許願表。</span></div>
         </div>
       </div>
       <div class="sect-actions">
@@ -993,7 +1008,7 @@ function doPost(e) {
 </div>
 
 <script>
-const APP_VERSION = 'v3.7';
+const APP_VERSION = 'v3.8';
 document.getElementById('appVersion').textContent = APP_VERSION;
 const LS = { ROWS:'ar-v3', BUDGET:'ab-v3' };
 const BASE = 'https://jsonblob.com/api/jsonBlob';
@@ -1749,6 +1764,7 @@ function getWishTotal(){ return wishes.reduce((s,w)=>s+(parseFloat(w.qty)||0)*(p
 
 function updateWishTotal(){
   const t=getWishTotal();
+  document.getElementById('wishCount').textContent = wishes.length+' 項';
   document.getElementById('wishTotal').textContent     = fmt(t);
   document.getElementById('wishTotalCell').textContent = fmt(t);
   /* 逐列更新小計（輸入單價/數量時即時反映） */
@@ -1955,12 +1971,30 @@ wishBody.addEventListener('keydown',e=>{
   const head=e.target.closest && e.target.closest('.wish-head');
   if(head && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); head.click(); }
 });
+/* 整個許願表收合／展開：預設收合，狀態只記在本機 */
+const wishSect=document.getElementById('sec-wish');
+const wishSectToggle=document.getElementById('wishSectToggle');
+function setWishSectOpen(open){
+  wishSect.classList.toggle('collapsed', !open);
+  wishSectToggle.setAttribute('aria-expanded', String(open));
+  try{ localStorage.setItem('ar-wish-sect-open', open?'1':'0'); }catch(e){}
+  if(open){ wishSect.querySelectorAll('.wish-item.open .name-ta').forEach(fitTa); refreshMarquee(); }
+}
+try{ if(localStorage.getItem('ar-wish-sect-open')==='1') setWishSectOpen(true); }catch(e){}
+wishSectToggle.addEventListener('click',()=>setWishSectOpen(wishSect.classList.contains('collapsed')));
+wishSectToggle.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===' '){ e.preventDefault(); wishSectToggle.click(); }
+});
+/* 從上方導覽列點「許願表」時自動展開 */
+document.querySelectorAll('.qn-item[href="#sec-wish"]').forEach(a=>a.addEventListener('click',()=>setWishSectOpen(true)));
+
 document.getElementById('wishToggleAllBtn').addEventListener('click',()=>{
   const open=!wishes.every(w=>wishOpen.has(w.id));
   wishes.forEach(w=>{ if(open) wishOpen.add(w.id); else wishOpen.delete(w.id); });
   persistWishOpen(); buildWishTable();
 });
 document.getElementById('addWishBtn').addEventListener('click',()=>{
+  setWishSectOpen(true);                  /* 收合中按新增，先把整個許願表打開 */
   const w=newWish();
   wishes.push(w); wishOpen.add(w.id); persistWishOpen();
   buildWishTable(); persistWishes();
